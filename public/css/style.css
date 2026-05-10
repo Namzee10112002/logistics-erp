@@ -1,0 +1,174 @@
+:root {
+    --navy-dark: #1a237e;
+    --navy-light: #283593;
+    --accent-blue: #3f51b5;
+    --bg-gray: #f5f7fb;
+    --sidebar-width: 260px;
+    --transition-speed: 0.3s;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-gray);
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* Utility Classes */
+.text-navy { color: var(--navy-dark); }
+.bg-navy { background-color: var(--navy-dark); }
+.btn-navy {
+    background-color: var(--navy-dark);
+    color: white;
+    transition: all 0.3s;
+}
+.btn-navy:hover {
+    background-color: var(--navy-light);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* --- AUTH LAYOUT (Login/Register) --- */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.auth-card {
+    width: 100%;
+    max-width: 1000px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    overflow: hidden;
+    display: flex;
+}
+.auth-image {
+    flex: 1;
+    background: url('../login-bg.png') center/cover no-repeat;
+    display: none;
+}
+@media (min-width: 768px) {
+    .auth-image { display: block; }
+}
+.auth-form {
+    flex: 1;
+    padding: 50px;
+}
+
+/* --- SIDEBAR & NAVBAR --- */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--navy-dark);
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transition: var(--transition-speed);
+    display: flex;
+    flex-direction: column;
+}
+.sidebar-brand {
+    padding: 25px;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 20px;
+}
+.sidebar-footer {
+    padding: 20px 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.nav-link-custom {
+    padding: 12px 25px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: 0.3s;
+}
+.nav-link-custom:hover, .nav-link-custom.active {
+    color: white;
+    background: rgba(255,255,255,0.1);
+    border-left: 4px solid #fff;
+}
+
+.main-wrapper {
+    margin-left: var(--sidebar-width);
+    transition: var(--transition-speed);
+}
+.top-navbar {
+    height: 70px;
+    background: white;
+    padding: 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* Dashboard KPI Cards */
+.kpi-card {
+    border: none;
+    border-radius: 15px;
+    padding: 20px;
+    transition: transform 0.3s;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+.kpi-card:hover {
+    transform: translateY(-5px);
+}
+.icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+/* Pure CSS Chart */
+.chart-container {
+    height: 250px;
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+.bar {
+    flex: 1;
+    background: var(--accent-blue);
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    transition: height 1s;
+}
+.bar:hover { background: var(--navy-dark); }
+.bar::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: #888;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 992px) {
+    .sidebar { left: -var(--sidebar-width); }
+    .sidebar.active { left: 0; }
+    .main-wrapper { margin-left: 0; }
+    .main-wrapper.active { margin-left: var(--sidebar-width); }
+}

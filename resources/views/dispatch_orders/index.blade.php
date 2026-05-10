@@ -1,0 +1,166 @@
+@extends('layouts.app')
+
+@section('title', 'Quản lý Điều vận')
+
+@section('content')
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <h4 class="fw-bold mb-0">Danh sách Lệnh điều xe</h4>
+    <div class="d-flex gap-2">
+        <button class="btn btn-navy px-4 fw-bold">
+            <i class="fa fa-print me-2"></i> IN DANH SÁCH
+        </button>
+    </div>
+</div>
+
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if(Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
+<!-- Pending Jobs for Dispatching -->
+<div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-navy mb-0"><i class="fa fa-clock me-2"></i> Đơn hàng chờ phân công</h5>
+        <span class="badge bg-danger rounded-pill">{{ count($pendingJobs) }} đơn hàng</span>
+    </div>
+    <div class="card-body p-4">
+        @if(count($pendingJobs) > 0)
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="small text-muted text-uppercase">
+                        <th>Mã Job / Khách hàng</th>
+                        <th>Lộ trình (Tuyến)</th>
+                        <th>Hàng hóa</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($pendingJobs as $job)
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-navy">{{ $job->job_code }}</div>
+                            <div class="small text-muted">{{ $job->customer->customer_name }}</div>
+                        </td>
+                        <td>
+                            <div class="small fw-bold">{{ $job->pickupLocation->location_name }}</div>
+                            <div class="small text-muted"><i class="fa fa-arrow-right mx-1"></i> {{ $job->deliveryLocation->location_name }}</div>
+                        </td>
+                        <td>
+                            <div class="small text-muted">{{ $job->cargo_type }}</div>
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ route('dispatch-orders.create', ['shipping_job_id' => $job->id]) }}" class="btn btn-sm btn-navy px-3 fw-bold">
+                                <i class="fa fa-plus-circle me-1"></i> LẬP LỆNH
+                            </a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @else
+        <div class="text-center py-3 text-muted small">
+            Tất cả đơn hàng đã được phân công.
+        </div>
+        @endif
+    </div>
+</div>
+@endif
+
+<!-- Filters -->
+<div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+    <form action="{{ route('dispatch-orders.index') }}" method="GET" class="row g-3">
+        <div class="col-md-9">
+            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo Số lệnh, Mã Job, Biển số xe, Tên tài xế..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-navy w-100">Tìm kiếm</button>
+        </div>
+    </form>
+</div>
+
+<!-- Data Table -->
+<div class="card border-0 rounded-4 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="ps-4">Số Lệnh / Ngày tạo</th>
+                    <th>Mã Job / Khách hàng</th>
+                    <th>Tài Xế / Xe</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-center">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($dispatchOrders as $order)
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-navy">{{ $order->order_number }}</div>
+                            <div class="small text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold"><a href="{{ route('shipping-jobs.show', $order->shipping_job_id) }}" class="text-decoration-none text-navy">{{ $order->shippingJob->job_code }}</a></div>
+                            <div class="small text-muted text-truncate" style="max-width: 150px;">{{ $order->shippingJob->customer->customer_name }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ $order->driver->full_name }}</div>
+                            <div class="small text-muted">{{ $order->vehicle->plate_number }}</div>
+                        </td>
+                        <td>
+                            @php
+                                $statusClass = match($order->dispatch_status) {
+                                    'dispatched' => 'bg-info text-dark',
+                                    'on_way' => 'bg-warning text-dark',
+                                    'completed' => 'bg-success',
+                                    default => 'bg-light text-dark'
+                                };
+                                $statusName = match($order->dispatch_status) {
+                                    'dispatched' => 'Đã điều xe',
+                                    'on_way' => 'Đang đi',
+                                    'completed' => 'Hoàn thành',
+                                    default => 'Khác'
+                                };
+                            @endphp
+                            <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border-0" type="button" data-bs-toggle="dropdown">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                    <li><a class="dropdown-item" href="{{ route('dispatch-orders.show', $order->id) }}"><i class="fa fa-eye me-2 text-info"></i> Chi tiết</a></li>
+                                    @if(Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="javascript:void(0)" onclick="handleDelete('{{ $order->id }}', 'Hủy lệnh điều xe {{ $order->order_number }}?')">
+                                            <i class="fa fa-trash me-2"></i> Hủy lệnh
+                                        </a>
+                                    </li>
+                                    @endif
+                                </ul>
+                            </div>
+                            <form id="delete-form-{{ $order->id }}" action="{{ route('dispatch-orders.destroy', $order->id) }}" method="POST" style="display: none;">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">Chưa có lệnh điều xe nào.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="p-4 border-top">
+        {{ $dispatchOrders->appends(request()->query())->links('pagination::bootstrap-5') }}
+    </div>
+</div>
+@endsection

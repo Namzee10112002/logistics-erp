@@ -1,0 +1,133 @@
+<?php
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CashAdvanceController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DebitNoteController;
+use App\Http\Controllers\DispatchOrderController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ServicePriceController;
+use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ShippingJobController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleController;
+use Illuminate\Support\Facades\Route;
+
+// Auth Routes
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
+
+// Protected Routes
+Route::middleware('auth')->group(function () {
+    Route::get('/', function () {
+        return redirect()->route('dashboard');
+    });
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // 📊 Reports (ADMIN, ACCOUNTANT, DISPATCH)
+    Route::middleware('role:ADMIN,ACCOUNTANT,DISPATCH')->group(function () {
+        Route::get('/reports/operational', [ReportController::class, 'operational'])->name('reports.operational');
+    });
+
+    // 📊 Financial Reports (ADMIN, ACCOUNTANT only)
+    Route::middleware('role:ADMIN,ACCOUNTANT')->group(function () {
+        Route::get('/reports/financial', [ReportController::class, 'financial'])->name('reports.financial');
+    });
+
+    // ⚙️ System Settings & Backup (ADMIN / GĐ)
+    Route::middleware('role:ADMIN')->group(function () {
+        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::get('/settings/backup', [SettingController::class, 'backup'])->name('settings.backup');
+    });
+
+    // 👤 User Management (ADMIN, DISPATCH)
+    Route::middleware('role:ADMIN,DISPATCH')->group(function () {
+        Route::resource('users', UserController::class);
+    });
+
+    // 📂 Master Data - Customers (ADMIN, SALES)
+    Route::middleware('role:ADMIN,SALES')->group(function () {
+        Route::resource('customers', CustomerController::class);
+    });
+
+    // 📂 Master Data - Logistics Resources (ADMIN, DISPATCH)
+    Route::middleware('role:ADMIN,DISPATCH')->group(function () {
+        Route::resource('locations', LocationController::class);
+        Route::resource('vehicles', VehicleController::class);
+        Route::resource('drivers', DriverController::class);
+    });
+
+    // 📂 Master Data - Service Prices (ADMIN, ACCOUNTANT, SALES)
+    Route::middleware('role:ADMIN,ACCOUNTANT,SALES')->group(function () {
+        Route::resource('service-prices', ServicePriceController::class);
+    });
+
+    // 🚢 Shipping Jobs (All roles can view, only SALES/ADMIN can create/edit)
+    Route::get('shipping-jobs', [ShippingJobController::class, 'index'])->name('shipping-jobs.index');
+
+    Route::middleware('role:ADMIN,SALES')->group(function () {
+        Route::get('shipping-jobs/create', [ShippingJobController::class, 'create'])->name('shipping-jobs.create');
+        Route::post('shipping-jobs', [ShippingJobController::class, 'store'])->name('shipping-jobs.store');
+        Route::get('shipping-jobs/{shipping_job}/edit', [ShippingJobController::class, 'edit'])->name('shipping-jobs.edit');
+        Route::put('shipping-jobs/{shipping_job}', [ShippingJobController::class, 'update'])->name('shipping-jobs.update');
+        Route::delete('shipping-jobs/{shipping_job}', [ShippingJobController::class, 'destroy'])->name('shipping-jobs.destroy');
+    });
+
+    Route::get('shipping-jobs/{shipping_job}', [ShippingJobController::class, 'show'])->name('shipping-jobs.show');
+
+    // 🚛 Dispatch Orders
+    // ADMIN and DISPATCH can do everything
+    Route::middleware('role:ADMIN,DISPATCH')->group(function () {
+        Route::resource('dispatch-orders', DispatchOrderController::class)->except(['index', 'show']);
+    });
+
+    // DRIVER, ADMIN, DISPATCH can view and update status
+    Route::middleware('role:ADMIN,DISPATCH,DRIVER')->group(function () {
+        Route::get('dispatch-orders', [DispatchOrderController::class, 'index'])->name('dispatch-orders.index');
+        Route::get('dispatch-orders/{dispatch_order}', [DispatchOrderController::class, 'show'])->name('dispatch-orders.show');
+        Route::patch('/dispatch-orders/{dispatch_order}/status', [DispatchOrderController::class, 'updateStatus'])->name('dispatch-orders.update-status');
+    });
+
+    // 💰 Expenses & Documents (DRIVER cannot add)
+    Route::middleware('role:ADMIN,ACCOUNTANT,SALES,DISPATCH,FIELD,DOCUMENT')->group(function () {
+        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');
+    });
+
+    Route::middleware('role:ADMIN,ACCOUNTANT,DOCUMENT')->group(function () {
+        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+    });
+
+    // 💰 Finance - Cash Advances (FIELD/DISPATCH creates, ACCOUNTANT/ADMIN approves)
+    Route::post('cash-advances', [CashAdvanceController::class, 'store'])->name('cash-advances.store');
+    Route::middleware('role:ADMIN,ACCOUNTANT')->group(function () {
+        Route::post('cash-advances/{cashAdvance}/approve', [CashAdvanceController::class, 'approve'])->name('cash-advances.approve');
+    });
+
+    // 💰 Finance - Billing & Payments (ADMIN, ACCOUNTANT)
+    Route::middleware('role:ADMIN,ACCOUNTANT')->group(function () {
+        Route::post('debit-notes', [DebitNoteController::class, 'store'])->name('debit-notes.store');
+        Route::get('debit-notes/{debitNote}', [DebitNoteController::class, 'show'])->name('debit-notes.show');
+        Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+    });
+
+    // 👤 Profile Settings (All users)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+});
