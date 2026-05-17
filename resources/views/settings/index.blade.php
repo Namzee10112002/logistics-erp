@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Cấu hình Hệ thống - NT Logistics')
+@section('title', 'Cài đặt - NT Logistics')
 
 @section('content')
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <h4 class="fw-bold text-navy">Cấu hình Hệ thống</h4>
+            <h4 class="fw-bold text-navy">Cài đặt</h4>
             <p class="text-muted small">Quản lý thông tin công ty, tham số vận hành và bảo mật dữ liệu.</p>
         </div>
     </div>
@@ -43,7 +43,7 @@
                             <h6 class="fw-bold mb-1">Lưu thay đổi</h6>
                             <p class="small mb-0 opacity-75">Tất cả thay đổi sẽ được áp dụng ngay lập tức trên toàn hệ thống.</p>
                         </div>
-                        <button type="submit" class="btn btn-light fw-bold px-4">LƯU CẤU HÌNH</button>
+                        <button type="submit" class="btn btn-light fw-bold px-4">LƯU CÀI ĐẶT</button>
                     </div>
                 </div>
             </form>

@@ -34,6 +34,12 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'role_id' => Role::query()->inRandomOrder()->first()?->id ?? Role::factory(),
             'status' => 1,
+            'employee_code' => 'NV-'.fake()->unique()->numerify('######'),
+            'position' => fake()->jobTitle(),
+            'department' => fake()->randomElement(['Kinh doanh', 'Chứng từ', 'Điều vận', 'Kế toán', 'Đội xe']),
+            'joined_at' => fake()->dateTimeBetween('-4 years', '-1 month'),
+            'theme_color' => fake()->randomElement(['#1a237e', '#0f766e', '#0369a1', '#854d0e', '#166534']),
+            'is_dark_mode' => fake()->boolean(20),
             'remember_token' => Str::random(10),
         ];
     }

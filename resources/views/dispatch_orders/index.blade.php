@@ -92,6 +92,7 @@
                     <th class="ps-4">Số Lệnh / Ngày tạo</th>
                     <th>Mã Job / Khách hàng</th>
                     <th>Tài Xế / Xe</th>
+                    <th>Loading</th>
                     <th>Trạng Thái</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
@@ -110,6 +111,16 @@
                         <td>
                             <div class="fw-bold">{{ $order->driver->full_name }}</div>
                             <div class="small text-muted">{{ $order->vehicle->plate_number }}</div>
+                        </td>
+                        <td style="min-width: 140px;">
+                            @php
+                                $loading = (int) ($order->loading_percent ?? 0);
+                                $loadingClass = $loading >= 100 ? 'bg-success' : ($loading >= 70 ? 'bg-info' : ($loading >= 35 ? 'bg-warning' : 'bg-danger'));
+                            @endphp
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar {{ $loadingClass }}" style="width: {{ $loading }}%;"></div>
+                            </div>
+                            <div class="small text-muted mt-1">{{ $loading }}%</div>
                         </td>
                         <td>
                             @php
@@ -153,7 +164,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Chưa có lệnh điều xe nào.</td>
+                        <td colspan="6" class="text-center py-5 text-muted">Chưa có lệnh điều xe nào.</td>
                     </tr>
                 @endforelse
             </tbody>

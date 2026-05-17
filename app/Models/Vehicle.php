@@ -18,6 +18,7 @@ class Vehicle extends Model
         'payload',
         'registration_expiry',
         'status',
+        'note',
     ];
 
     public function dispatchOrders(): HasMany

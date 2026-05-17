@@ -78,6 +78,30 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Địa điểm bắt đầu</label>
+                        <select name="start_location_id" class="form-select">
+                            <option value="">Theo điểm bốc của đơn hàng</option>
+                            @foreach($locations as $location)
+                                <option value="{{ $location->id }}" {{ old('start_location_id', $shippingJob->pickup_location_id) == $location->id ? 'selected' : '' }}>
+                                    {{ $location->location_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Địa điểm kết thúc</label>
+                        <select name="end_location_id" class="form-select">
+                            <option value="">Theo điểm dỡ của đơn hàng</option>
+                            @foreach($locations as $location)
+                                <option value="{{ $location->id }}" {{ old('end_location_id', $shippingJob->delivery_location_id) == $location->id ? 'selected' : '' }}>
+                                    {{ $location->location_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label fw-bold text-navy">Định mức Nhiên liệu (Lít)</label>
                         <div class="input-group">
                             <input type="number" step="0.1" name="fuel_quota" class="form-control" placeholder="0.0">
@@ -96,6 +120,21 @@
                     <div class="col-12">
                         <label class="form-label fw-bold text-navy">Ghi chú điều vận</label>
                         <textarea name="note" class="form-control" rows="3" placeholder="Nhập hướng dẫn cho tài xế..."></textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-navy">Loading ban đầu (%)</label>
+                        <input type="number" name="loading_percent" class="form-control" min="0" max="100" value="{{ old('loading_percent', 0) }}">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-navy">Vĩ độ hiện tại</label>
+                        <input type="number" step="0.0000001" name="current_latitude" class="form-control" placeholder="VD: 10.7769000">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-navy">Kinh độ hiện tại</label>
+                        <input type="number" step="0.0000001" name="current_longitude" class="form-control" placeholder="VD: 106.7009000">
                     </div>
 
                     <div class="col-12 mt-5">

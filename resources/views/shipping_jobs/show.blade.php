@@ -488,9 +488,9 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Phương thức</label>
                         <select name="payment_method" class="form-select" required>
-                            <option value="Chuyển khoản (UNC)">Chuyển khoản (UNC)</option>
+                            <option value="Chuyển khoản">Chuyển khoản (UNC)</option>
                             <option value="Tiền mặt">Tiền mặt</option>
-                            <option value="Cấn trừ công nợ">Cấn trừ công nợ</option>
+                            <option value="Cấn trừ nợ">Cấn trừ công nợ</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -534,9 +534,29 @@
                             <option value="Khác">Khác...</option>
                         </select>
                     </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Luồng chứng từ</label>
+                            <select name="document_flow" class="form-select" required>
+                                <option value="input">Đầu vào</option>
+                                <option value="output">Đầu ra</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">Giai đoạn thuế</label>
+                            <select name="tax_stage" class="form-select" required>
+                                <option value="before_tax">Trước thuế</option>
+                                <option value="after_tax">Sau thuế</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="mb-0">
                         <label class="form-label fw-bold small text-muted">Chọn file (Ảnh hoặc PDF)</label>
                         <input type="file" name="file" class="form-control" accept="image/*,.pdf" required>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-bold small text-muted">Ghi chú</label>
+                        <input type="text" name="note" class="form-control" placeholder="VD: Hóa đơn sau thuế bản scan">
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">

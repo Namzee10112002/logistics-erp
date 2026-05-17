@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\DispatchOrder;
 use App\Models\TrackingLog;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +20,9 @@ class TrackingLogFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'dispatch_order_id' => DispatchOrder::factory(),
+            'status_update' => fake()->randomElement(['dispatched', 'on_way', 'completed']),
+            'updated_by' => User::factory(),
         ];
     }
 }

@@ -10,14 +10,20 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class VehicleFactory extends Factory
 {
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
     public function definition(): array
     {
         return [
             'plate_number' => fake()->unique()->bothify('##?-####'),
-            'vehicle_type' => fake()->randomElement(['Đầu kéo', 'Mooc', 'Xe tải']),
+            'vehicle_type' => fake()->randomElement(['Đầu kéo container', 'Mooc 40 feet', 'Xe tải 10 tấn', 'Xe tải lạnh']),
             'payload' => fake()->randomFloat(2, 1, 40),
             'registration_expiry' => fake()->dateTimeBetween('now', '+2 years'),
             'status' => fake()->randomElement(['available', 'busy', 'maintenance']),
+            'note' => fake()->optional()->sentence(),
         ];
     }
 }

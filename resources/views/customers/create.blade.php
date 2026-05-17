@@ -15,11 +15,9 @@
         @csrf
         <div class="row g-4">
             <div class="col-md-4">
-                <label class="form-label fw-bold">Mã Khách Hàng <span class="text-danger">*</span></label>
-                <input type="text" name="customer_code" class="form-control @error('customer_code') is-invalid @enderror" value="{{ old('customer_code') }}" placeholder="KH001..." required>
-                @error('customer_code')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+                <label class="form-label fw-bold">Mã Khách Hàng</label>
+                <input type="text" class="form-control bg-light" value="Tự sinh khi lưu" disabled>
+                <div class="form-text">Quy định: KH-YYMM-XXX, không chỉnh sửa thủ công.</div>
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-bold">Tên Khách Hàng <span class="text-danger">*</span></label>
@@ -52,7 +50,7 @@
             </div>
 
             <div class="col-md-4">
-                <label class="form-label fw-bold">Số điện thoại</label>
+                <label class="form-label fw-bold">Số điện thoại liên hệ</label>
                 <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
             </div>
             <div class="col-md-4">

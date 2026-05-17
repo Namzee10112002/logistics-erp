@@ -13,10 +13,15 @@ class DriverFactory extends Factory
     public function definition(): array
     {
         return [
+            'driver_code' => 'TX-'.fake()->unique()->numerify('######'),
             'full_name' => fake()->name(),
             'phone' => fake()->phoneNumber(),
             'license_number' => 'GPLX-'.fake()->numerify('############'),
             'status' => fake()->randomElement(['active', 'inactive']),
+            'start_date' => fake()->dateTimeBetween('-5 years', '-1 month'),
+            'rank' => fake()->randomElement(['Tài xế chính', 'Tài xế container', 'Tài xế đường dài', 'Tài xế dự phòng']),
+            'contract_expiry' => fake()->dateTimeBetween('+3 months', '+2 years'),
+            'note' => fake()->optional()->sentence(),
         ];
     }
 }

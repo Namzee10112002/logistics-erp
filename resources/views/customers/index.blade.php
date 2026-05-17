@@ -21,7 +21,7 @@
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('customers.index') }}" method="GET" class="row g-3">
         <div class="col-md-10">
-            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo tên, MST, email..." value="{{ request('search') }}">
+            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã KH, tên, MST, email, người liên hệ, số điện thoại..." value="{{ request('search') }}">
         </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
@@ -39,7 +39,8 @@
                     <th>Khách Hàng / Công Ty</th>
                     <th>MST</th>
                     <th>Email</th>
-                    <th>Liên Hệ</th>
+                    <th>Người liên hệ</th>
+                    <th>Số điện thoại</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
@@ -53,10 +54,8 @@
                         </td>
                         <td><code>{{ $customer->tax_code }}</code></td>
                         <td>{{ $customer->email }}</td>
-                        <td>
-                            <div class="small">{{ $customer->phone }}</div>
-                            <div class="small text-muted">{{ $customer->contact_person }}</div>
-                        </td>
+                        <td>{{ $customer->contact_person ?: '---' }}</td>
+                        <td>{{ $customer->phone ?: '---' }}</td>
                         <td class="text-center">
                             <a href="{{ route('customers.edit', $customer->id) }}" class="btn btn-sm text-warning me-2">
                                 <i class="fa fa-edit"></i>
@@ -72,7 +71,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">Không tìm thấy khách hàng nào.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">Không tìm thấy khách hàng nào.</td>
                     </tr>
                 @endforelse
             </tbody>

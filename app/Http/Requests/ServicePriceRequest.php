@@ -13,10 +13,14 @@ class ServicePriceRequest extends FormRequest
 
     public function rules(): array
     {
+        $servicePriceId = $this->route('service_price') ? $this->route('service_price')->id : null;
+
         return [
+            'package_code' => ['nullable', 'string', 'max:50', 'unique:service_prices,package_code,'.$servicePriceId],
             'service_name' => ['required', 'string', 'max:255'],
             'unit' => ['required', 'string', 'max:50'],
             'unit_price' => ['required', 'numeric', 'min:0'],
+            'is_tax_included' => ['boolean'],
         ];
     }
 

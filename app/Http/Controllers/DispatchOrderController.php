@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DispatchOrderRequest;
 use App\Models\DispatchOrder;
 use App\Models\Driver;
+use App\Models\Location;
 use App\Models\ShippingJob;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -43,8 +44,9 @@ class DispatchOrderController extends Controller
 
         $vehicles = Vehicle::orderBy('plate_number')->get();
         $drivers = Driver::orderBy('full_name')->get();
+        $locations = Location::orderBy('location_name')->get();
 
-        return view('dispatch_orders.create', compact('shippingJob', 'vehicles', 'drivers'));
+        return view('dispatch_orders.create', compact('shippingJob', 'vehicles', 'drivers', 'locations'));
     }
 
     public function store(DispatchOrderRequest $request)
@@ -59,32 +61,67 @@ class DispatchOrderController extends Controller
     {
         if (auth()->user()->hasRole('DRIVER')) {
             $driver = auth()->user()->driver;
-            if (!$driver || $dispatchOrder->driver_id !== $driver->id) {
+            if (! $driver || $dispatchOrder->driver_id !== $driver->id) {
                 abort(403, 'Bạn không có quyền truy cập lệnh điều xe này.');
             }
         }
 
-        $dispatchOrder->load(['shippingJob.customer', 'vehicle', 'driver', 'creator']);
+        $dispatchOrder->load([
+            'shippingJob.customer',
+            'shippingJob.pickupLocation',
+            'shippingJob.deliveryLocation',
+            'vehicle',
+            'driver',
+            'startLocation',
+            'endLocation',
+            'creator',
+        ]);
 
         return view('dispatch_orders.show', compact('dispatchOrder'));
     }
 
     public function updateStatus(Request $request, DispatchOrder $dispatchOrder)
     {
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:dispatched,on_way,completed'],
+            'loading_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'current_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'current_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+        ]);
+
         if (auth()->user()->hasRole('DRIVER')) {
             $driver = auth()->user()->driver;
-            if (!$driver || $dispatchOrder->driver_id !== $driver->id) {
+            if (! $driver || $dispatchOrder->driver_id !== $driver->id) {
                 abort(403, 'Bạn không có quyền cập nhật lệnh điều xe này.');
             }
         }
 
-        $status = $request->status;
+        $status = $validated['status'] ?? $dispatchOrder->dispatch_status;
+        $loadingPercent = $validated['loading_percent'] ?? null;
+
+        if ($loadingPercent === 100) {
+            $status = 'completed';
+        }
+
         $updateData = ['dispatch_status' => $status];
 
+        if ($loadingPercent !== null) {
+            $updateData['loading_percent'] = $loadingPercent;
+        }
+
+        if (array_key_exists('current_latitude', $validated)) {
+            $updateData['current_latitude'] = $validated['current_latitude'];
+        }
+
+        if (array_key_exists('current_longitude', $validated)) {
+            $updateData['current_longitude'] = $validated['current_longitude'];
+        }
+
         if ($status === 'on_way') {
-            $updateData['start_time'] = now();
+            $updateData['start_time'] = $dispatchOrder->start_time ?? now();
         } elseif ($status === 'completed') {
-            $updateData['end_time'] = now();
+            $updateData['end_time'] = $dispatchOrder->end_time ?? now();
+            $updateData['loading_percent'] = 100;
 
             // Cập nhật trạng thái Shipping Job nếu cần
             $dispatchOrder->shippingJob->update(['status' => 'completed']);

@@ -17,6 +17,25 @@
     </div>
 @endif
 
+<div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+    <form action="{{ route('vehicles.index') }}" method="GET" class="row g-3">
+        <div class="col-md-7">
+            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo biển số, loại xe..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select border-light">
+                <option value="">Tất cả trạng thái</option>
+                <option value="available" {{ request('status') === 'available' ? 'selected' : '' }}>Sẵn sàng</option>
+                <option value="busy" {{ request('status') === 'busy' ? 'selected' : '' }}>Đang chạy</option>
+                <option value="maintenance" {{ request('status') === 'maintenance' ? 'selected' : '' }}>Bảo trì</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+    </form>
+</div>
+
 <!-- Data Table -->
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
     <div class="table-responsive">
@@ -27,6 +46,7 @@
                     <th>Loại Xe / Tải Trọng</th>
                     <th>Hạn Đăng Kiểm</th>
                     <th>Trạng Thái</th>
+                    <th>Ghi chú</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
@@ -71,6 +91,7 @@
                             @endphp
                             <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
                         </td>
+                        <td class="small text-muted" style="max-width: 220px;">{{ $vehicle->note ?: '---' }}</td>
                         <td class="text-center">
                             <button class="btn btn-sm text-warning me-2" 
                                 onclick="prepareEdit({{ json_encode($vehicle) }})"
@@ -88,7 +109,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Chưa có dữ liệu xe.</td>
+                        <td colspan="6" class="text-center py-5 text-muted">Chưa có dữ liệu xe.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -136,6 +157,10 @@
                             <label class="form-label fw-semibold">Hạn Đăng Kiểm</label>
                             <input type="date" name="registration_expiry" id="registration_expiry" class="form-control bg-light border-0">
                         </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <textarea name="note" id="note" class="form-control bg-light border-0" rows="3"></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
@@ -166,6 +191,7 @@
         document.getElementById('payload').value = vehicle.payload;
         document.getElementById('status').value = vehicle.status;
         document.getElementById('registration_expiry').value = vehicle.registration_expiry ? vehicle.registration_expiry.split(' ')[0] : '';
+        document.getElementById('note').value = vehicle.note || '';
     }
 </script>
 @endpush

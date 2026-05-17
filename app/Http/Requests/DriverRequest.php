@@ -20,6 +20,10 @@ class DriverRequest extends FormRequest
             'phone' => ['required', 'string', 'max:20'],
             'license_number' => ['required', 'string', 'max:50', 'unique:drivers,license_number,'.$driverId],
             'status' => ['required', 'in:active,inactive'],
+            'start_date' => ['nullable', 'date'],
+            'rank' => ['nullable', 'string', 'max:100'],
+            'contract_expiry' => ['nullable', 'date'],
+            'note' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

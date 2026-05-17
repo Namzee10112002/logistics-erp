@@ -6,7 +6,6 @@ use App\Models\DebitNote;
 use App\Models\ServicePrice;
 use App\Models\ShippingJob;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class DebitNoteController extends Controller
 {
@@ -26,23 +25,25 @@ class DebitNoteController extends Controller
         $serviceFee = $priceRecord ? $priceRecord->unit_price : 0;
         $totalExpenses = $job->expenses->where('status', 'approved')->sum('amount');
 
-        $debitNote = DebitNote::updateOrCreate(
-            ['shipping_job_id' => $job->id, 'status' => 'unpaid'],
-            [
-                'customer_id' => $job->customer_id,
-                'total_service_fee' => $serviceFee,
-                'total_expense_paid' => $totalExpenses,
-                'grand_total' => $serviceFee + $totalExpenses,
-                'issued_at' => now(),
-            ]
-        );
+        $debitNote = DebitNote::firstOrNew(['shipping_job_id' => $job->id]);
+        $wasRecentlyCreated = ! $debitNote->exists;
 
-        if (! $debitNote->wasRecentlyCreated) {
-            return back()->with('success', 'Đã cập nhật lại Giấy báo nợ với dữ liệu chi phí mới nhất!');
+        if ($wasRecentlyCreated) {
+            $debitNote->note_number = $this->generateNoteNumber();
+            $debitNote->status = 'unpaid';
         }
 
-        if (! $debitNote->note_number) {
-            $debitNote->update(['note_number' => 'DN-'.strtoupper(Str::random(8))]);
+        $debitNote->fill([
+            'customer_id' => $job->customer_id,
+            'total_service_fee' => $serviceFee,
+            'total_expense_paid' => $totalExpenses,
+            'grand_total' => $serviceFee + $totalExpenses,
+            'issued_at' => $debitNote->issued_at ?? now(),
+        ]);
+        $debitNote->save();
+
+        if (! $wasRecentlyCreated) {
+            return back()->with('success', 'Đã cập nhật lại Giấy báo nợ với dữ liệu chi phí mới nhất!');
         }
 
         return back()->with('success', 'Đã lập Giấy báo nợ thành công!');
@@ -50,8 +51,35 @@ class DebitNoteController extends Controller
 
     public function show(DebitNote $debitNote)
     {
-        $debitNote->load(['shippingJob', 'customer', 'shippingJob.expenses']);
+        $debitNote->load([
+            'customer',
+            'payments.receiver',
+            'shippingJob.customer',
+            'shippingJob.pickupLocation',
+            'shippingJob.deliveryLocation',
+            'shippingJob.expenses',
+        ]);
 
         return view('debit_notes.show', compact('debitNote'));
+    }
+
+    private function generateNoteNumber(): string
+    {
+        $date = now()->format('ymd');
+        $prefix = "DN-{$date}-";
+
+        $lastNote = DebitNote::withTrashed()
+            ->where('note_number', 'like', "{$prefix}%")
+            ->orderBy('note_number', 'desc')
+            ->first();
+
+        if ($lastNote) {
+            $lastSequence = (int) substr($lastNote->note_number, -3);
+            $newSequence = str_pad($lastSequence + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $newSequence = '001';
+        }
+
+        return $prefix.$newSequence;
     }
 }

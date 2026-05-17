@@ -18,7 +18,7 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_code' => 'CUST-'.strtoupper(fake()->unique()->bothify('??###')),
+            'customer_code' => 'KH-'.now()->format('ym').'-'.fake()->unique()->numerify('###'),
             'customer_name' => fake()->company(),
             'company_name' => fake()->company(),
             'tax_code' => fake()->unique()->numerify('##########'),

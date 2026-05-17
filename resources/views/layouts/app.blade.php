@@ -107,6 +107,12 @@
                     <i class="fa fa-box"></i> Đơn hàng
                 </a>
 
+                @if(Auth::user()->hasRole(['ADMIN', 'ACCOUNTANT', 'SALES', 'DISPATCH', 'FIELD', 'DOCUMENT']))
+                <a href="{{ route('documents.index') }}" class="nav-link-custom {{ request()->routeIs('documents.*') ? 'active' : '' }}">
+                    <i class="fa fa-folder-open"></i> Chứng từ
+                </a>
+                @endif
+
                 @if(Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
                 <a href="{{ route('dispatch-orders.index') }}" class="nav-link-custom {{ request()->routeIs('dispatch-orders.*') ? 'active' : '' }}">
                     <i class="fa fa-route"></i> Điều vận
@@ -132,7 +138,7 @@
                 <div class="small text-white text-uppercase fw-bold mt-4 mb-2 px-3" style="font-size: 0.65rem; letter-spacing: 1px;">Hệ thống</div>
                 @if(Auth::user()->hasRole(['ADMIN']))
                 <a href="{{ route('settings.index') }}" class="nav-link-custom {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <i class="fa fa-gears"></i> Cấu hình
+                    <i class="fa fa-gears"></i> Cài đặt
                 </a>
                 @endif
                 <a href="{{ route('users.index') }}" class="nav-link-custom {{ request()->routeIs('users.*') ? 'active' : '' }}">

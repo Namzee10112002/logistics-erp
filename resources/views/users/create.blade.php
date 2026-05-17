@@ -31,6 +31,25 @@
                             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Mã nhân sự</label>
+                                <input type="text" class="form-control bg-light" value="Tự sinh khi lưu" disabled>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Chức vụ</label>
+                                <input type="text" name="position" class="form-control" value="{{ old('position') }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Bộ phận / phòng ban</label>
+                                <input type="text" name="department" class="form-control" value="{{ old('department') }}">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Ngày tham gia</label>
+                                <input type="date" name="joined_at" class="form-control" value="{{ old('joined_at') }}">
+                            </div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Vai trò hệ thống</label>
                             <select name="role_id" class="form-select @error('role_id') is-invalid @enderror" required>

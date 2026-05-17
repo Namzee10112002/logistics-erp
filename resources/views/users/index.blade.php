@@ -16,15 +16,28 @@
         </div>
     </div>
 
+    <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+        <form action="{{ route('users.index') }}" method="GET" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã nhân sự, họ tên, email, chức vụ, bộ phận..." value="{{ request('search') }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-navy w-100">Lọc</button>
+            </div>
+        </form>
+    </div>
+
     <div class="card border-0 rounded-4 shadow-sm">
         <div class="card-body p-4">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Họ tên</th>
+                            <th>Mã / Họ tên</th>
                             <th>Email</th>
                             <th>Vai trò</th>
+                            <th>Chức vụ</th>
+                            <th>Bộ phận</th>
                             <th>Ngày tham gia</th>
                             <th class="text-center">Thao tác</th>
                         </tr>
@@ -37,7 +50,10 @@
                                         <div class="bg-navy text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
                                             {{ strtoupper(substr($user->name, 0, 1)) }}
                                         </div>
-                                        <span class="fw-bold">{{ $user->name }}</span>
+                                        <div>
+                                            <div class="fw-bold">{{ $user->employee_code ?? '---' }}</div>
+                                            <div class="small text-muted">{{ $user->name }}</div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>{{ $user->email }}</td>
@@ -46,7 +62,9 @@
                                         {{ $user->role->role_name }}
                                     </span>
                                 </td>
-                                <td>{{ $user->created_at->format('d/m/Y') }}</td>
+                                <td>{{ $user->position ?? '---' }}</td>
+                                <td>{{ $user->department ?? '---' }}</td>
+                                <td>{{ $user->joined_at?->format('d/m/Y') ?? $user->created_at->format('d/m/Y') }}</td>
                                 <td class="text-center">
                                     <div class="btn-group">
                                         <a href="{{ route('users.edit', $user) }}" class="btn btn-sm btn-outline-navy">

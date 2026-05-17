@@ -11,6 +11,7 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = auth()->user();
+
         return view('profile.edit', compact('user'));
     }
 
@@ -20,7 +21,7 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'theme_color' => ['required', 'string', 'max:7'],
             'is_dark_mode' => ['boolean'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
@@ -28,6 +29,7 @@ class ProfileController extends Controller
 
         $user->update([
             'name' => $request->name,
+            'full_name' => $request->name,
             'email' => $request->email,
             'theme_color' => $request->theme_color,
             'is_dark_mode' => $request->boolean('is_dark_mode'),
@@ -37,6 +39,6 @@ class ProfileController extends Controller
             $user->update(['password' => Hash::make($request->password)]);
         }
 
-        return back()->with('success', 'Cập nhật thành công! (Chế độ tối: ' . ($user->is_dark_mode ? 'Bật' : 'Tắt') . ')');
+        return back()->with('success', 'Cập nhật thành công! (Chế độ tối: '.($user->is_dark_mode ? 'Bật' : 'Tắt').')');
     }
 }

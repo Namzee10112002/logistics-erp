@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -28,6 +29,10 @@ class User extends Authenticatable
         'password',
         'role_id',
         'status',
+        'employee_code',
+        'position',
+        'department',
+        'joined_at',
         'theme_color',
         'is_dark_mode',
     ];
@@ -37,7 +42,7 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
 
-    public function driver(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function driver(): HasOne
     {
         return $this->hasOne(Driver::class);
     }
@@ -71,6 +76,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'joined_at' => 'date',
             'is_dark_mode' => 'boolean',
         ];
     }

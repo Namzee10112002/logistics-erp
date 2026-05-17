@@ -18,6 +18,10 @@ class VehicleService
             });
         }
 
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
         return $query->latest()->paginate($perPage);
     }
 

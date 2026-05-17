@@ -3,16 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Driver;
+use App\Models\RecurringExpense;
 use App\Models\ShippingJob;
 use App\Models\Vehicle;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
 
 class ReportController extends Controller
 {
-    public function operational()
+    public function operational(Request $request)
     {
+        [$dateFrom, $dateTo, $periodLabel] = $this->resolveReportRange($request);
+
         // 1. Job Status Distribution
         $jobStatuses = ShippingJob::select('status', DB::raw('count(*) as total'))
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->groupBy('status')
             ->get();
 
@@ -20,6 +26,7 @@ class ReportController extends Controller
         $totalVehicles = Vehicle::count();
         $activeVehicles = DB::table('dispatch_orders')
             ->whereIn('dispatch_status', ['dispatched', 'on_way'])
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->distinct('vehicle_id')
             ->count();
 
@@ -28,6 +35,7 @@ class ReportController extends Controller
             ->join('drivers', 'dispatch_orders.driver_id', '=', 'drivers.id')
             ->select('drivers.full_name', DB::raw('count(*) as total_jobs'))
             ->where('dispatch_orders.dispatch_status', 'completed')
+            ->whereBetween('dispatch_orders.created_at', [$dateFrom, $dateTo])
             ->groupBy('drivers.id', 'drivers.full_name')
             ->orderBy('total_jobs', 'desc')
             ->limit(5)
@@ -37,20 +45,34 @@ class ReportController extends Controller
         $vehicleStats = DB::table('dispatch_orders')
             ->join('vehicles', 'dispatch_orders.vehicle_id', '=', 'vehicles.id')
             ->select('vehicles.plate_number', DB::raw('count(*) as total_trips'))
+            ->whereBetween('dispatch_orders.created_at', [$dateFrom, $dateTo])
             ->groupBy('vehicles.id', 'vehicles.plate_number')
             ->orderBy('total_trips', 'desc')
             ->limit(5)
             ->get();
 
-        return view('reports.operational', compact('jobStatuses', 'totalVehicles', 'activeVehicles', 'topDrivers', 'vehicleStats'));
+        if ($request->query('export') === 'excel') {
+            return $this->streamCsv('bao_cao_van_hanh.csv', [
+                ['Kỳ báo cáo', $periodLabel],
+                ['Tổng xe', $totalVehicles],
+                ['Xe đang hoạt động', $activeVehicles],
+                [],
+                ['Top tài xế', 'Số chuyến hoàn thành'],
+                ...$topDrivers->map(fn ($driver) => [$driver->full_name, $driver->total_jobs])->all(),
+            ]);
+        }
+
+        return view('reports.operational', compact('jobStatuses', 'totalVehicles', 'activeVehicles', 'topDrivers', 'vehicleStats', 'periodLabel'));
     }
 
-    public function financial()
+    public function financial(Request $request)
     {
+        [$dateFrom, $dateTo, $periodLabel] = $this->resolveReportRange($request);
+
         // 1. Monthly Revenue (Last 6 months)
         $monthlyRevenue = DB::table('debit_notes')
             ->select(DB::raw("DATE_FORMAT(issued_at, '%m/%Y') as month"), DB::raw('SUM(grand_total) as total'))
-            ->where('issued_at', '>=', now()->subMonths(6))
+            ->whereBetween('issued_at', [$dateFrom, $dateTo])
             ->groupBy('month')
             ->orderBy('issued_at', 'asc')
             ->get();
@@ -59,15 +81,18 @@ class ReportController extends Controller
         $customerRevenue = DB::table('debit_notes')
             ->join('customers', 'debit_notes.customer_id', '=', 'customers.id')
             ->select('customers.company_name', DB::raw('SUM(grand_total) as total'))
+            ->whereBetween('debit_notes.issued_at', [$dateFrom, $dateTo])
             ->groupBy('customers.id', 'customers.company_name')
             ->orderBy('total', 'desc')
             ->limit(5)
             ->get();
 
         // 3. Profit Margin Calculation
-        $totalRevenue = DB::table('debit_notes')->sum('grand_total');
-        $totalExpenses = DB::table('expenses')->where('status', 'approved')->sum('amount');
-        $profit = $totalRevenue - $totalExpenses;
+        $totalRevenue = DB::table('debit_notes')->whereBetween('issued_at', [$dateFrom, $dateTo])->sum('grand_total');
+        $totalExpenses = DB::table('expenses')->where('status', 'approved')->whereBetween('created_at', [$dateFrom, $dateTo])->sum('amount');
+        $recurringExpenses = RecurringExpense::latest()->paginate(10);
+        $recurringMonthlyTotal = RecurringExpense::where('status', 'active')->sum('amount');
+        $profit = $totalRevenue - $totalExpenses - $recurringMonthlyTotal;
 
         // 4. Overdue Debt (Unpaid > 30 days)
         $overdueDebt = DB::table('debit_notes')
@@ -77,6 +102,50 @@ class ReportController extends Controller
             ->select('debit_notes.*', 'customers.company_name as customer_name')
             ->get();
 
-        return view('reports.financial', compact('monthlyRevenue', 'customerRevenue', 'totalRevenue', 'totalExpenses', 'profit', 'overdueDebt'));
+        if ($request->query('export') === 'excel') {
+            return $this->streamCsv('bao_cao_tai_chinh.csv', [
+                ['Kỳ báo cáo', $periodLabel],
+                ['Tổng doanh thu', $totalRevenue],
+                ['Chi phí phát sinh đã duyệt', $totalExpenses],
+                ['Chi phí cố định hàng tháng', $recurringMonthlyTotal],
+                ['Lợi nhuận dự kiến', $profit],
+            ]);
+        }
+
+        return view('reports.financial', compact('monthlyRevenue', 'customerRevenue', 'totalRevenue', 'totalExpenses', 'profit', 'overdueDebt', 'recurringExpenses', 'recurringMonthlyTotal', 'periodLabel'));
+    }
+
+    private function resolveReportRange(Request $request): array
+    {
+        $year = (int) $request->query('year', now()->year);
+        $period = $request->query('period', 'last_6_months');
+
+        if ($period === 'year') {
+            return [now()->setYear($year)->startOfYear(), now()->setYear($year)->endOfYear(), "Năm {$year}"];
+        }
+
+        if ($period === 'quarter') {
+            $quarter = max(1, min(4, (int) $request->query('quarter', now()->quarter)));
+            $startMonth = (($quarter - 1) * 3) + 1;
+            $dateFrom = now()->setDate($year, $startMonth, 1)->startOfDay();
+
+            return [$dateFrom, $dateFrom->copy()->addMonths(2)->endOfMonth(), "Quý {$quarter}/{$year}"];
+        }
+
+        return [now()->subMonths(5)->startOfMonth(), now()->endOfMonth(), '6 tháng gần nhất'];
+    }
+
+    private function streamCsv(string $filename, array $rows)
+    {
+        return Response::streamDownload(function () use ($rows) {
+            $file = fopen('php://output', 'w');
+            fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            foreach ($rows as $row) {
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 }

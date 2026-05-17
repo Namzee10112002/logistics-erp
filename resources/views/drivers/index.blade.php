@@ -17,30 +17,62 @@
     </div>
 @endif
 
+<div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+    <form action="{{ route('drivers.index') }}" method="GET" class="row g-3">
+        <div class="col-md-5">
+            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã tài xế, tên, GPLX, cấp bậc..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="rank" class="form-control border-light" placeholder="Cấp bậc" value="{{ request('rank') }}">
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select border-light">
+                <option value="">Tất cả</option>
+                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Đang làm việc</option>
+                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nghỉ việc</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+    </form>
+</div>
+
 <!-- Data Table -->
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light">
                 <tr class="small text-muted text-uppercase">
-                    <th class="ps-4">Họ và Tên</th>
+                    <th class="ps-4">Mã / Họ và Tên</th>
                     <th>Số Điện Thoại</th>
                     <th>Số Bằng Lái</th>
+                    <th>Cấp bậc / Hợp đồng</th>
                     <th>Trạng Thái</th>
+                    <th>Ghi chú</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($drivers as $driver)
                     <tr>
-                        <td class="ps-4 fw-bold text-navy">{{ $driver->full_name }}</td>
+                        <td class="ps-4">
+                            <div class="fw-bold text-navy">{{ $driver->driver_code ?? '---' }}</div>
+                            <div class="small">{{ $driver->full_name }}</div>
+                            <div class="small text-muted">Vào làm: {{ $driver->start_date?->format('d/m/Y') ?? '---' }}</div>
+                        </td>
                         <td>{{ $driver->phone }}</td>
                         <td><code>{{ $driver->license_number }}</code></td>
+                        <td>
+                            <div class="fw-bold">{{ $driver->rank ?: '---' }}</div>
+                            <div class="small text-muted">HĐ đến: {{ $driver->contract_expiry?->format('d/m/Y') ?? '---' }}</div>
+                        </td>
                         <td>
                             <span class="badge {{ $driver->status === 'active' ? 'bg-success' : 'bg-danger' }}">
                                 {{ $driver->status === 'active' ? 'Đang làm việc' : 'Nghỉ việc' }}
                             </span>
                         </td>
+                        <td class="small text-muted" style="max-width: 180px;">{{ $driver->note ?: '---' }}</td>
                         <td class="text-center">
                             <button class="btn btn-sm text-warning me-2" 
                                 onclick="prepareEdit({{ json_encode($driver) }})"
@@ -58,7 +90,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Chưa có dữ liệu tài xế.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">Chưa có dữ liệu tài xế.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -94,12 +126,28 @@
                             <label class="form-label fw-semibold">Số Bằng Lái</label>
                             <input type="text" name="license_number" id="license_number" class="form-control bg-light border-0" required>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày bắt đầu làm việc</label>
+                            <input type="date" name="start_date" id="start_date" class="form-control bg-light border-0">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Cấp bậc</label>
+                            <input type="text" name="rank" id="rank" class="form-control bg-light border-0" placeholder="VD: Chính, phụ, tổ trưởng...">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Thời hạn hợp đồng</label>
+                            <input type="date" name="contract_expiry" id="contract_expiry" class="form-control bg-light border-0">
+                        </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Trạng Thái</label>
                             <select name="status" id="status" class="form-select bg-light border-0" required>
                                 <option value="active">Đang làm việc</option>
                                 <option value="inactive">Nghỉ việc</option>
                             </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <textarea name="note" id="note" class="form-control bg-light border-0" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
@@ -130,6 +178,10 @@
         document.getElementById('phone').value = driver.phone;
         document.getElementById('license_number').value = driver.license_number;
         document.getElementById('status').value = driver.status;
+        document.getElementById('start_date').value = driver.start_date ? driver.start_date.split('T')[0].split(' ')[0] : '';
+        document.getElementById('rank').value = driver.rank || '';
+        document.getElementById('contract_expiry').value = driver.contract_expiry ? driver.contract_expiry.split('T')[0].split(' ')[0] : '';
+        document.getElementById('note').value = driver.note || '';
     }
 </script>
 @endpush

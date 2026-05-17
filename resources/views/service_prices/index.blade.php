@@ -17,24 +17,50 @@
     </div>
 @endif
 
+<div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+    <form action="{{ route('service-prices.index') }}" method="GET" class="row g-3">
+        <div class="col-md-7">
+            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã gói, tên dịch vụ, đơn vị..." value="{{ request('search') }}">
+        </div>
+        <div class="col-md-3">
+            <select name="is_tax_included" class="form-select border-light">
+                <option value="">Tất cả thuế</option>
+                <option value="1" {{ request('is_tax_included') === '1' ? 'selected' : '' }}>Đã gồm thuế</option>
+                <option value="0" {{ request('is_tax_included') === '0' ? 'selected' : '' }}>Chưa gồm thuế</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+    </form>
+</div>
+
 <!-- Data Table -->
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light">
                 <tr class="small text-muted text-uppercase">
-                    <th class="ps-4">Tên Dịch Vụ</th>
+                    <th class="ps-4">Mã gói</th>
+                    <th>Tên Dịch Vụ</th>
                     <th>Đơn Vị Tính</th>
                     <th>Đơn Giá (VNĐ)</th>
+                    <th>Thuế</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($servicePrices as $price)
                     <tr>
-                        <td class="ps-4 fw-bold text-navy">{{ $price->service_name }}</td>
+                        <td class="ps-4 fw-bold text-navy">{{ $price->package_code }}</td>
+                        <td class="fw-bold">{{ $price->service_name }}</td>
                         <td>{{ $price->unit }}</td>
                         <td class="fw-bold text-success">{{ number_format($price->unit_price) }}</td>
+                        <td>
+                            <span class="badge {{ $price->is_tax_included ? 'bg-success' : 'bg-warning text-dark' }}">
+                                {{ $price->is_tax_included ? 'Đã gồm thuế' : 'Chưa gồm thuế' }}
+                            </span>
+                        </td>
                         <td class="text-center">
                             <button class="btn btn-sm text-warning me-2" 
                                 onclick="prepareEdit({{ json_encode($price) }})"
@@ -52,7 +78,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="text-center py-5 text-muted">Chưa có dữ liệu biểu giá.</td>
+                        <td colspan="6" class="text-center py-5 text-muted">Chưa có dữ liệu biểu giá.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -77,6 +103,10 @@
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-3">
                         <div class="col-md-12">
+                            <label class="form-label fw-semibold">Mã gói</label>
+                            <input type="text" name="package_code" id="package_code" class="form-control bg-light border-0" placeholder="Để trống để hệ thống tự sinh">
+                        </div>
+                        <div class="col-md-12">
                             <label class="form-label fw-semibold">Tên Dịch Vụ</label>
                             <input type="text" name="service_name" id="service_name" class="form-control bg-light border-0" placeholder="VD: Vận chuyển Cont 20'..." required>
                         </div>
@@ -87,6 +117,12 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Đơn Giá (VNĐ)</label>
                             <input type="number" name="unit_price" id="unit_price" class="form-control bg-light border-0" required>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_tax_included" id="is_tax_included" value="1">
+                                <label class="form-check-label fw-semibold" for="is_tax_included">Đơn giá đã bao gồm thuế</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -113,9 +149,11 @@
         document.getElementById('priceForm').action = `/service-prices/${price.id}`;
         document.getElementById('methodField').innerHTML = '@method("PUT")';
         
+        document.getElementById('package_code').value = price.package_code || '';
         document.getElementById('service_name').value = price.service_name;
         document.getElementById('unit').value = price.unit;
         document.getElementById('unit_price').value = price.unit_price;
+        document.getElementById('is_tax_included').checked = !!price.is_tax_included;
     }
 </script>
 @endpush

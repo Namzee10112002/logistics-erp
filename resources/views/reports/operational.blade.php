@@ -7,8 +7,38 @@
     <div class="row mb-4">
         <div class="col-12">
             <h4 class="fw-bold text-navy">Báo cáo Vận hành</h4>
-            <p class="text-muted small">Phân tích hiệu suất đội xe, tài xế và tiến độ đơn hàng.</p>
+            <p class="text-muted small">Phân tích hiệu suất đội xe, tài xế và tiến độ đơn hàng. Kỳ hiện tại: {{ $periodLabel }}</p>
         </div>
+    </div>
+
+    <div class="card border-0 rounded-4 shadow-sm p-4 mb-4 no-print">
+        <form action="{{ route('reports.operational') }}" method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Kỳ báo cáo</label>
+                <select name="period" class="form-select">
+                    <option value="last_6_months" {{ request('period', 'last_6_months') === 'last_6_months' ? 'selected' : '' }}>6 tháng gần nhất</option>
+                    <option value="quarter" {{ request('period') === 'quarter' ? 'selected' : '' }}>Theo quý</option>
+                    <option value="year" {{ request('period') === 'year' ? 'selected' : '' }}>Theo năm</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Quý</label>
+                <select name="quarter" class="form-select">
+                    @for($quarter = 1; $quarter <= 4; $quarter++)
+                        <option value="{{ $quarter }}" {{ (int) request('quarter', now()->quarter) === $quarter ? 'selected' : '' }}>Quý {{ $quarter }}</option>
+                    @endfor
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Năm</label>
+                <input type="number" name="year" class="form-control" value="{{ request('year', now()->year) }}">
+            </div>
+            <div class="col-md-5 d-flex gap-2">
+                <button type="submit" class="btn btn-navy flex-fill">Xem báo cáo</button>
+                <a href="{{ route('reports.operational', request()->query() + ['export' => 'excel']) }}" class="btn btn-outline-success">Excel</a>
+                <button type="button" onclick="window.print()" class="btn btn-outline-navy">PDF</button>
+            </div>
+        </form>
     </div>
 
     <div class="row g-4">
@@ -141,4 +171,10 @@
         }
     });
 </script>
+<style>
+    @media print {
+        .sidebar, .top-navbar, .no-print, .btn { display: none !important; }
+        .main-wrapper { margin-left: 0 !important; }
+    }
+</style>
 @endsection

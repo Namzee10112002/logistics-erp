@@ -26,9 +26,14 @@ class DispatchOrderRequest extends FormRequest
             'shipping_job_id' => ['required', 'exists:shipping_jobs,id'],
             'vehicle_id' => ['required', 'exists:vehicles,id'],
             'driver_id' => ['required', 'exists:drivers,id'],
+            'start_location_id' => ['nullable', 'exists:locations,id'],
+            'end_location_id' => ['nullable', 'exists:locations,id'],
             'note' => ['nullable', 'string', 'max:500'],
             'fuel_quota' => ['nullable', 'numeric', 'min:0'],
             'toll_quota' => ['nullable', 'numeric', 'min:0'],
+            'loading_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'current_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'current_longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

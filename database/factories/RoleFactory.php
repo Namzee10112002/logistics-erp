@@ -18,7 +18,9 @@ class RoleFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'role_code' => strtoupper(fake()->unique()->bothify('ROLE_???###')),
+            'role_name' => fake()->jobTitle(),
+            'description' => fake()->sentence(),
         ];
     }
 }

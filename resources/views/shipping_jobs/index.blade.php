@@ -22,20 +22,40 @@
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('shipping-jobs.index') }}" method="GET" class="row g-3">
-        <div class="col-md-7">
+        <div class="col-lg-4 col-md-6">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo Mã Job, Số Cont, Tên khách hàng..." value="{{ request('search') }}">
         </div>
-        <div class="col-md-3">
+        <div class="col-lg-2 col-md-6">
+            <select name="customer_id" class="form-select border-light">
+                <option value="">Tất cả khách hàng</option>
+                @foreach($customers as $customer)
+                    <option value="{{ $customer->id }}" {{ (string) request('customer_id') === (string) $customer->id ? 'selected' : '' }}>
+                        {{ $customer->customer_name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4">
             <select name="status" class="form-select border-light">
-                <option value="">-- Tất cả trạng thái --</option>
+                <option value="">Tất cả trạng thái</option>
+                <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Đang xử lý</option>
                 <option value="new" {{ request('status') == 'new' ? 'selected' : '' }}>Mới tạo</option>
                 <option value="dispatched" {{ request('status') == 'dispatched' ? 'selected' : '' }}>Đã điều xe</option>
                 <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Hoàn thành</option>
                 <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
             </select>
         </div>
+        <div class="col-lg-2 col-md-4">
+            <input type="date" name="date_from" class="form-control border-light" value="{{ request('date_from') }}" title="Từ ngày dự kiến">
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <input type="date" name="date_to" class="form-control border-light" value="{{ request('date_to') }}" title="Đến ngày dự kiến">
+        </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{{ route('shipping-jobs.index') }}" class="btn btn-light w-100">Xóa lọc</a>
         </div>
     </form>
 </div>
@@ -48,8 +68,10 @@
                 <tr class="small text-muted text-uppercase">
                     <th class="ps-4">Mã Job / Ngày tạo</th>
                     <th>Khách Hàng</th>
+                    <th>Hạn xử lý</th>
                     <th>Tuyến Đường (Bốc -> Dỡ)</th>
                     <th>Container / Loại hàng</th>
+                    <th>Hồ sơ</th>
                     <th>Trạng Thái</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
@@ -66,6 +88,12 @@
                             <div class="small text-muted">{{ $job->customer->customer_code }}</div>
                         </td>
                         <td>
+                            <div class="fw-bold">{{ $job->expected_date ? \Carbon\Carbon::parse($job->expected_date)->format('d/m/Y') : '---' }}</div>
+                            <div class="small {{ $job->expected_date && \Carbon\Carbon::parse($job->expected_date)->isPast() && $job->status !== 'completed' ? 'text-danger fw-bold' : 'text-muted' }}">
+                                {{ $job->expected_date ? \Carbon\Carbon::parse($job->expected_date)->diffForHumans() : '' }}
+                            </div>
+                        </td>
+                        <td>
                             <div class="small">
                                 <span class="badge bg-light text-dark fw-normal border">{{ $job->pickupLocation->location_name }}</span>
                                 <i class="fa fa-arrow-right mx-1 text-muted small"></i>
@@ -75,6 +103,13 @@
                         <td>
                             <div class="fw-bold">{{ $job->container_number ?? 'N/A' }}</div>
                             <div class="small text-muted">{{ $job->cargo_type }} ({{ $job->container_type ?? 'Lẻ' }})</div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-1 small">
+                                <span><i class="fa fa-route text-primary me-1"></i>{{ $job->dispatch_orders_count }} lệnh</span>
+                                <span><i class="fa fa-folder text-warning me-1"></i>{{ $job->documents_count }} chứng từ</span>
+                                <span><i class="fa fa-receipt text-success me-1"></i>{{ $job->expenses_count }} chi phí</span>
+                            </div>
                         </td>
                         <td>
                             @php
@@ -104,6 +139,9 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
                                     <li><a class="dropdown-item" href="{{ route('shipping-jobs.show', $job->id) }}"><i class="fa fa-eye me-2 text-info"></i> Chi tiết</a></li>
+                                    @if($job->dispatch_orders_count === 0 && Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
+                                        <li><a class="dropdown-item" href="{{ route('dispatch-orders.create', ['shipping_job_id' => $job->id]) }}"><i class="fa fa-truck me-2 text-success"></i> Lập lệnh điều xe</a></li>
+                                    @endif
                                     @if(Auth::user()->hasRole(['ADMIN', 'SALES']))
                                     <li><a class="dropdown-item" href="{{ route('shipping-jobs.edit', $job->id) }}"><i class="fa fa-edit me-2 text-warning"></i> Chỉnh sửa</a></li>
                                     <li><hr class="dropdown-divider"></li>
@@ -123,7 +161,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">Không tìm thấy đơn hàng nào.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">Không tìm thấy đơn hàng nào.</td>
                     </tr>
                 @endforelse
             </tbody>

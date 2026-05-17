@@ -16,9 +16,12 @@ class Document extends Model
     protected $fillable = [
         'shipping_job_id',
         'doc_category',
+        'document_flow',
+        'tax_stage',
         'file_url',
         'uploaded_by',
         'status',
+        'note',
     ];
 
     public function shippingJob(): BelongsTo

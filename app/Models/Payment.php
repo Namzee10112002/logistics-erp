@@ -17,10 +17,25 @@ class Payment extends Model
         'amount_paid',
         'payment_method',
         'payment_date',
+        'received_by',
+        'reference_no',
+        'note',
     ];
 
     public function debitNote(): BelongsTo
     {
         return $this->belongsTo(DebitNote::class);
+    }
+
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'payment_date' => 'datetime',
+        ];
     }
 }

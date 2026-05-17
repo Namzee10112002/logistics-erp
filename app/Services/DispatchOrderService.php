@@ -11,7 +11,7 @@ class DispatchOrderService
 {
     public function getAll(array $filters = [])
     {
-        $query = DispatchOrder::with(['shippingJob.customer', 'vehicle', 'driver', 'creator'])
+        $query = DispatchOrder::with(['shippingJob.customer', 'vehicle', 'driver', 'creator', 'startLocation', 'endLocation'])
             ->latest();
 
         if (Auth::user()->hasRole('DRIVER')) {
@@ -44,7 +44,12 @@ class DispatchOrderService
             $data['order_number'] = $this->generateOrderNumber();
             $data['created_by'] = Auth::id();
             $data['dispatch_status'] = 'dispatched';
+            $data['loading_percent'] = (int) ($data['loading_percent'] ?? 0);
             $data['start_time'] = now();
+
+            $shippingJob = ShippingJob::find($data['shipping_job_id']);
+            $data['start_location_id'] = $data['start_location_id'] ?? $shippingJob?->pickup_location_id;
+            $data['end_location_id'] = $data['end_location_id'] ?? $shippingJob?->delivery_location_id;
 
             $dispatchOrder = DispatchOrder::create($data);
 
@@ -55,7 +60,6 @@ class DispatchOrderService
             ]);
 
             // Update Shipping Job status
-            $shippingJob = ShippingJob::find($data['shipping_job_id']);
             if ($shippingJob && $shippingJob->status === 'new') {
                 $shippingJob->update(['status' => 'dispatched']);
             }

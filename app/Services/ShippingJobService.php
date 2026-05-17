@@ -10,6 +10,7 @@ class ShippingJobService
     public function getAll(array $filters = [])
     {
         $query = ShippingJob::with(['customer', 'pickupLocation', 'deliveryLocation', 'creator'])
+            ->withCount(['dispatchOrders', 'documents', 'expenses'])
             ->latest();
 
         if (Auth::user()->hasRole('DRIVER')) {
@@ -35,6 +36,18 @@ class ShippingJobService
 
         if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['customer_id'])) {
+            $query->where('customer_id', $filters['customer_id']);
+        }
+
+        if (! empty($filters['date_from'])) {
+            $query->whereDate('expected_date', '>=', $filters['date_from']);
+        }
+
+        if (! empty($filters['date_to'])) {
+            $query->whereDate('expected_date', '<=', $filters['date_to']);
         }
 
         return $query->paginate(10);

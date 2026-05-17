@@ -18,8 +18,9 @@ class ShippingJobController extends Controller
     public function index(Request $request)
     {
         $shippingJobs = $this->shippingJobService->getAll($request->all());
+        $customers = Customer::orderBy('customer_name')->get();
 
-        return view('shipping_jobs.index', compact('shippingJobs'));
+        return view('shipping_jobs.index', compact('shippingJobs', 'customers'));
     }
 
     public function create()
@@ -43,12 +44,25 @@ class ShippingJobController extends Controller
             $driver = auth()->user()->driver;
             $driverId = $driver ? $driver->id : 0;
             $hasAccess = $shippingJob->dispatchOrders()->where('driver_id', $driverId)->exists();
-            if (!$hasAccess) {
+            if (! $hasAccess) {
                 abort(403, 'Bạn không có quyền truy cập đơn hàng này.');
             }
         }
 
-        $shippingJob->load(['customer', 'pickupLocation', 'deliveryLocation', 'creator', 'dispatchOrders.driver', 'dispatchOrders.vehicle']);
+        $shippingJob->load([
+            'customer',
+            'pickupLocation',
+            'deliveryLocation',
+            'creator',
+            'documents.uploader',
+            'expenses.reporter',
+            'cashAdvances.requester',
+            'debitNote.payments',
+            'dispatchOrders.driver',
+            'dispatchOrders.vehicle',
+            'dispatchOrders.startLocation',
+            'dispatchOrders.endLocation',
+        ]);
 
         return view('shipping_jobs.show', compact('shippingJob'));
     }

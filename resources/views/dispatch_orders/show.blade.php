@@ -3,6 +3,13 @@
 @section('title', 'Chi tiết Lệnh điều xe ' . $dispatchOrder->order_number)
 
 @section('content')
+@php
+    $loadingPercent = (int) ($dispatchOrder->loading_percent ?? 0);
+    $progressClass = $loadingPercent >= 100 ? 'bg-success' : ($loadingPercent >= 70 ? 'bg-info' : ($loadingPercent >= 35 ? 'bg-warning' : 'bg-danger'));
+    $mapLat = $dispatchOrder->current_latitude ?? 10.7769;
+    $mapLng = $dispatchOrder->current_longitude ?? 106.7009;
+@endphp
+
 <div class="mb-4 d-flex justify-content-between align-items-center">
     <div>
         <a href="{{ route('dispatch-orders.index') }}" class="text-navy text-decoration-none small fw-bold">
@@ -71,11 +78,45 @@
                     </div>
 
                     <div class="col-12 mt-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="small text-muted text-uppercase fw-bold">Địa điểm bắt đầu</label>
+                                <div class="fw-bold text-navy">{{ $dispatchOrder->startLocation->location_name ?? $dispatchOrder->shippingJob->pickupLocation->location_name }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted text-uppercase fw-bold">Địa điểm kết thúc</label>
+                                <div class="fw-bold text-navy">{{ $dispatchOrder->endLocation->location_name ?? $dispatchOrder->shippingJob->deliveryLocation->location_name }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <label class="small text-muted text-uppercase fw-bold">Tình trạng loading</label>
+                        <div class="progress mt-2" style="height: 18px;">
+                            <div class="progress-bar {{ $progressClass }} fw-bold" style="width: {{ $loadingPercent }}%;">
+                                {{ $loadingPercent }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-4">
                         <label class="small text-muted text-uppercase fw-bold">Ghi chú từ điều vận</label>
                         <div class="p-3 bg-light rounded-3 italic text-muted border-start border-4 border-navy mt-2">
                             {{ $dispatchOrder->note ?? 'Không có ghi chú.' }}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 rounded-4 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <h5 class="fw-bold text-navy mb-0">Bản đồ vị trí xe</h5>
+            </div>
+            <div class="card-body p-4">
+                <div id="dispatchMap" class="rounded-3 border" style="height: 360px;"></div>
+                <div class="small text-muted mt-2">
+                    Tọa độ hiện tại: {{ $dispatchOrder->current_latitude ?? 'chưa cập nhật' }}, {{ $dispatchOrder->current_longitude ?? 'chưa cập nhật' }}
                 </div>
             </div>
         </div>
@@ -187,6 +228,28 @@
 
                 <!-- Update Status Buttons for Drivers -->
                 <div class="mt-4 pt-3 border-top">
+                    <form action="{{ route('dispatch-orders.update-status', $dispatchOrder) }}" method="POST" class="mb-3">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="status" value="{{ $dispatchOrder->dispatch_status }}">
+                        <label class="small text-muted d-block mb-2">Cập nhật loading & vị trí xe:</label>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <input type="range" name="loading_percent" class="form-range" min="0" max="100" value="{{ $loadingPercent }}" oninput="document.getElementById('loadingValue').innerText = this.value + '%'">
+                                <div class="small fw-bold text-navy" id="loadingValue">{{ $loadingPercent }}%</div>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" step="0.0000001" name="current_latitude" class="form-control form-control-sm" value="{{ $dispatchOrder->current_latitude }}" placeholder="Vĩ độ">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" step="0.0000001" name="current_longitude" class="form-control form-control-sm" value="{{ $dispatchOrder->current_longitude }}" placeholder="Kinh độ">
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-sm btn-outline-navy w-100 fw-bold">Cập nhật tiến độ</button>
+                            </div>
+                        </div>
+                    </form>
+
                     @if($dispatchOrder->dispatch_status === 'dispatched')
                         <form action="{{ route('dispatch-orders.update-status', $dispatchOrder) }}" method="POST">
                             @csrf
@@ -232,4 +295,17 @@
         </div>
     </div>
 </div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const dispatchMap = L.map('dispatchMap').setView([{{ $mapLat }}, {{ $mapLng }}], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(dispatchMap);
+    L.marker([{{ $mapLat }}, {{ $mapLng }}]).addTo(dispatchMap)
+        .bindPopup(@json($dispatchOrder->vehicle->plate_number.' - '.$dispatchOrder->driver->full_name))
+        .openPopup();
+</script>
 @endsection

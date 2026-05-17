@@ -21,6 +21,7 @@ class VehicleRequest extends FormRequest
             'payload' => ['required', 'numeric', 'min:0'],
             'registration_expiry' => ['nullable', 'date'],
             'status' => ['required', 'in:available,busy,maintenance'],
+            'note' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

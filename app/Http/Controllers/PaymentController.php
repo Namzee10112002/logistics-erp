@@ -6,6 +6,7 @@ use App\Models\DebitNote;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -14,19 +15,24 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'debit_note_id' => 'required|exists:debit_notes,id',
             'amount' => 'required|numeric|min:1',
-            'payment_method' => 'required|string',
+            'payment_method' => ['required', 'string', Rule::in(['Chuyển khoản', 'Tiền mặt', 'Cấn trừ nợ'])],
             'reference_no' => 'nullable|string',
             'note' => 'nullable|string',
         ]);
 
-        $validated['received_by'] = Auth::id();
-        $validated['payment_date'] = now();
-
-        Payment::create($validated);
+        Payment::create([
+            'debit_note_id' => $validated['debit_note_id'],
+            'amount_paid' => $validated['amount'],
+            'payment_method' => $validated['payment_method'],
+            'payment_date' => now(),
+            'received_by' => Auth::id(),
+            'reference_no' => $validated['reference_no'] ?? null,
+            'note' => $validated['note'] ?? null,
+        ]);
 
         // Update Debit Note status
         $dn = DebitNote::findOrFail($request->debit_note_id);
-        $totalPaid = Payment::where('debit_note_id', $dn->id)->sum('amount');
+        $totalPaid = Payment::where('debit_note_id', $dn->id)->sum('amount_paid');
 
         if ($totalPaid >= $dn->grand_total) {
             $dn->update(['status' => 'paid']);
