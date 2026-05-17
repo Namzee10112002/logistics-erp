@@ -28,4 +28,9 @@ class Location extends Model
     {
         return $this->hasMany(ShippingJob::class, 'delivery_location_id');
     }
+
+    public function fieldStaff(): HasMany
+    {
+        return $this->hasMany(FieldStaff::class, 'responsible_location_id');
+    }
 }

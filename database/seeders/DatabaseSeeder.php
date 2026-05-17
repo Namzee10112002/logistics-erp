@@ -46,6 +46,7 @@ class DatabaseSeeder extends Seeder
         $servicePrices = $this->seedServicePrices();
 
         $this->seedSettings();
+        $this->call(FieldStaffSeeder::class);
 
         $shippingJobs = $this->seedShippingJobs($customers, $locations, $users);
         $dispatchOrders = $this->seedDispatchOrders($shippingJobs, $vehicles, $drivers, $users);

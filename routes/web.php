@@ -9,6 +9,7 @@ use App\Http\Controllers\DispatchOrderController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FieldStaffController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -71,6 +72,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('vehicles', VehicleController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('drivers', DriverController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('field-staff', FieldStaffController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 
     // Master Data - Service Prices (ADMIN, ACCOUNTANT, SALES)

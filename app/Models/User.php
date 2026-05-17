@@ -47,6 +47,11 @@ class User extends Authenticatable
         return $this->hasOne(Driver::class);
     }
 
+    public function fieldStaff(): HasOne
+    {
+        return $this->hasOne(FieldStaff::class);
+    }
+
     public function hasRole(array|string $roles): bool
     {
         if (is_string($roles)) {

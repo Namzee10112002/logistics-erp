@@ -95,6 +95,9 @@
                 <a href="{{ route('drivers.index') }}" class="nav-link-custom {{ request()->routeIs('drivers.*') ? 'active' : '' }}">
                     <i class="fa fa-id-card"></i> Tài xế
                 </a>
+                <a href="{{ route('field-staff.index') }}" class="nav-link-custom {{ request()->routeIs('field-staff.*') ? 'active' : '' }}">
+                    <i class="fa fa-user-shield"></i> Nhân viên hiện trường
+                </a>
                 @endif
 
                 @if(Auth::user()->hasRole(['ADMIN', 'ACCOUNTANT', 'SALES']))
