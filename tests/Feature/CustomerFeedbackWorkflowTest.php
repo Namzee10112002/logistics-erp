@@ -175,6 +175,11 @@ class CustomerFeedbackWorkflowTest extends TestCase
                 $this->assertStringContainsString('<autoFilter', $entries['xl/worksheets/sheet1.xml']);
                 $this->assertStringContainsString('state="frozen"', $entries['xl/worksheets/sheet1.xml']);
                 $this->assertStringNotContainsString('<drawing', $entries['xl/worksheets/sheet1.xml']);
+                $this->assertLessThan(
+                    strpos($entries['xl/worksheets/sheet1.xml'], '<mergeCells'),
+                    strpos($entries['xl/worksheets/sheet1.xml'], '<autoFilter'),
+                    'Excel requires autoFilter to appear before mergeCells in worksheet XML.'
+                );
             }
 
             if ($format === 'docx') {
