@@ -3,11 +3,69 @@
 @section('title', 'Thông tin công ty - NT Logistics')
 
 @section('content')
+@php
+    $companySettings = $settings->get('company', collect())->keyBy('key');
+    $companyName = $companySettings->get('company.name')?->value ?? 'Công Ty TNHH TMDV GNVT NGUYÊN TÂM';
+    $companyAddress = $companySettings->get('company.address')?->value ?? 'Hải Phòng';
+    $companyPhone = $companySettings->get('company.phone')?->value ?? '0900000000';
+    $companyEmail = $companySettings->get('company.email')?->value ?? 'contact@nguyentam-logistics.example';
+    $companyContact = $companySettings->get('company.contact_person')?->value ?? 'Bộ phận điều vận';
+@endphp
+
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
             <h4 class="fw-bold text-navy">Thông tin công ty</h4>
             <p class="text-muted small">Quản lý hồ sơ doanh nghiệp, địa chỉ, người liên hệ và thông tin xuất báo cáo.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden mb-4">
+        <div class="row g-0">
+            <div class="col-lg-8 p-4 text-white" style="background: #1a237e;">
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="badge rounded-pill bg-info text-dark px-3 py-2">Hồ sơ doanh nghiệp</span>
+                    <span class="badge rounded-pill bg-success px-3 py-2">Thông tin xuất báo cáo</span>
+                </div>
+                <h3 class="fw-bold mb-3">{{ $companyName }}</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: rgba(255,255,255,0.10);">
+                            <div class="small opacity-75 mb-1">Địa chỉ</div>
+                            <div class="fw-semibold">{{ $companyAddress }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: rgba(255,255,255,0.10);">
+                            <div class="small opacity-75 mb-1">Người liên hệ</div>
+                            <div class="fw-semibold">{{ $companyContact }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: rgba(255,255,255,0.10);">
+                            <div class="small opacity-75 mb-1">Số điện thoại</div>
+                            <div class="fw-semibold">{{ $companyPhone }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: rgba(255,255,255,0.10);">
+                            <div class="small opacity-75 mb-1">Email</div>
+                            <div class="fw-semibold">{{ $companyEmail }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 p-4 d-flex flex-column justify-content-center" style="background: #e0f7fa;">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="bg-white rounded-4 shadow-sm p-3 flex-shrink-0">
+                        <img src="{{ asset('img/company-logo.jpg') }}" alt="Logo công ty" style="width: 92px; height: 92px; object-fit: contain;">
+                    </div>
+                    <div>
+                        <div class="small text-muted text-uppercase fw-bold mb-2">Logo đang dùng</div>
+                        <div class="fw-bold text-navy">Tách riêng khỏi tên công ty trong mẫu xuất file</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

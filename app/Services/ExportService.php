@@ -413,55 +413,73 @@ class ExportService
     private function pdfPageContent(array $context, array $headers, array $rows, int $page, int $totalPages, bool $hasLogo): string
     {
         $content = '';
-        $content .= $this->pdfText(40, 555, $this->ascii((string) $context['file_type']), 10);
-        $content .= $this->pdfText(570, 555, $this->ascii((string) $context['company_name']), 10);
+
+        $content .= "0.10 0.14 0.49 rg\n0 535 842 60 re f\n";
+        $content .= "0.03 0.64 0.62 rg\n0 535 842 6 re f\n";
+        $content .= $this->pdfText(42, 562, $this->ascii((string) $context['file_type']), 10, '1 1 1');
+        $content .= $this->pdfRightText(760, 568, $this->pdfLimit($this->ascii((string) $context['company_name']), 210), 9, '1 1 1');
+        $content .= $this->pdfRightText(760, 552, 'Logo cong ty', 7, '0.82 0.92 1');
 
         if ($hasLogo) {
-            $content .= "q\n42 0 0 42 760 520 cm\n/ImLogo Do\nQ\n";
+            $content .= "1 1 1 rg\n773 542 48 48 re f\n";
+            $content .= "0.82 0.87 0.92 RG\n773 542 48 48 re S\n";
+            $content .= "q\n40 0 0 40 777 546 cm\n/ImLogo Do\nQ\n";
         }
 
-        $content .= $this->pdfCenteredText(421, 525, $this->ascii((string) $context['contact_line']), 9);
-        $content .= $this->pdfCenteredText(421, 500, $this->ascii((string) $context['title_upper']), 14);
-        $content .= $this->pdfCenteredText(421, 477, $this->ascii((string) $context['content']), 10);
+        $content .= "0.94 0.98 0.99 rg\n35 503 772 24 re f\n";
+        $content .= "0.78 0.88 0.92 RG\n35 503 772 24 re S\n";
+        $content .= $this->pdfCenteredText(421, 512, $this->pdfLimit($this->ascii((string) $context['contact_line']), 560), 8, '0.10 0.14 0.24');
+        $content .= $this->pdfCenteredText(421, 480, $this->ascii((string) $context['title_upper']), 16, '0.10 0.14 0.49');
+        $content .= "0.03 0.64 0.62 rg\n335 469 172 2 re f\n";
+        $content .= $this->pdfCenteredText(421, 452, $this->pdfLimit($this->ascii((string) $context['content']), 500), 10, '0.19 0.22 0.30');
 
-        $tableTop = 445;
+        $tableTop = 424;
         $left = 35;
         $width = 772;
         $rowHeight = 18;
         $columnCount = max(1, count($headers));
         $columnWidth = $width / $columnCount;
 
-        $content .= "0.3 w\n";
+        $content .= "0.10 0.14 0.49 rg\n";
+        $content .= $this->pdfFilledRectangle($left, $tableTop - $rowHeight, $width, $rowHeight);
+        $content .= "0.10 0.14 0.49 RG\n";
         $content .= $this->pdfRectangle($left, $tableTop - $rowHeight, $width, $rowHeight);
 
         foreach ($headers as $index => $header) {
             $x = $left + ($index * $columnWidth) + 3;
-            $content .= $this->pdfText($x, $tableTop - 12, $this->pdfLimit($this->ascii((string) $header), $columnWidth), 7);
+            $content .= $this->pdfText($x, $tableTop - 12, $this->pdfLimit($this->ascii((string) $header), $columnWidth), 7, '1 1 1');
 
             if ($index > 0) {
                 $lineX = $left + ($index * $columnWidth);
-                $content .= "{$lineX} ".($tableTop - $rowHeight).' m '.$lineX.' '.$tableTop." l S\n";
+                $content .= "0.80 0.90 0.94 RG\n{$lineX} ".($tableTop - $rowHeight).' m '.$lineX.' '.$tableTop." l S\n";
             }
         }
 
         foreach ($rows as $rowIndex => $row) {
             $y = $tableTop - (($rowIndex + 2) * $rowHeight);
+            if ($rowIndex % 2 === 0) {
+                $content .= "0.97 0.99 1 rg\n";
+                $content .= $this->pdfFilledRectangle($left, $y, $width, $rowHeight);
+            }
+
+            $content .= "0.82 0.87 0.92 RG\n";
             $content .= $this->pdfRectangle($left, $y, $width, $rowHeight);
 
             foreach ($headers as $columnIndex => $header) {
                 $x = $left + ($columnIndex * $columnWidth) + 3;
-                $content .= $this->pdfText($x, $y + 6, $this->pdfLimit($this->ascii((string) ($row[$columnIndex] ?? '')), $columnWidth), 7);
+                $content .= $this->pdfText($x, $y + 6, $this->pdfLimit($this->ascii((string) ($row[$columnIndex] ?? '')), $columnWidth), 7, '0.10 0.14 0.24');
 
                 if ($columnIndex > 0) {
                     $lineX = $left + ($columnIndex * $columnWidth);
-                    $content .= "{$lineX} {$y} m {$lineX} ".($y + $rowHeight)." l S\n";
+                    $content .= "0.82 0.87 0.92 RG\n{$lineX} {$y} m {$lineX} ".($y + $rowHeight)." l S\n";
                 }
             }
         }
 
-        $content .= $this->pdfText(610, 75, $this->ascii((string) $context['issued_place_date']), 10);
-        $content .= $this->pdfText(660, 55, 'Nhan vien xuat', 10);
-        $content .= $this->pdfCenteredText(421, 28, $this->ascii((string) $context['footer'])." | Trang {$page}/{$totalPages}", 9);
+        $content .= $this->pdfRightText(803, 75, $this->ascii((string) $context['issued_place_date']), 10, '0.10 0.14 0.24');
+        $content .= $this->pdfRightText(803, 55, 'Nhan vien xuat', 10, '0.10 0.14 0.24');
+        $content .= "0.10 0.14 0.49 rg\n0 0 842 38 re f\n";
+        $content .= $this->pdfCenteredText(421, 16, $this->ascii((string) $context['footer'])." | Trang {$page}/{$totalPages}", 9, '1 1 1');
 
         return $content;
     }
@@ -603,21 +621,33 @@ class ExportService
         return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="762000" cy="762000"/><wp:docPr id="1" name="Company Logo"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="Company Logo"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
     }
 
-    private function pdfText(float $x, float $y, string $text, int $size): string
+    private function pdfText(float $x, float $y, string $text, int $size, string $color = '0 0 0'): string
     {
-        return "BT\n/F1 {$size} Tf\n{$x} {$y} Td\n(".$this->pdf($text).") Tj\nET\n";
+        return "{$color} rg\nBT\n/F1 {$size} Tf\n{$x} {$y} Td\n(".$this->pdf($text).") Tj\nET\n";
     }
 
-    private function pdfCenteredText(float $centerX, float $y, string $text, int $size): string
+    private function pdfRightText(float $rightX, float $y, string $text, int $size, string $color = '0 0 0'): string
+    {
+        $x = max(25, $rightX - (strlen($text) * $size * 0.48));
+
+        return $this->pdfText($x, $y, $text, $size, $color);
+    }
+
+    private function pdfCenteredText(float $centerX, float $y, string $text, int $size, string $color = '0 0 0'): string
     {
         $x = max(25, $centerX - ((strlen($text) * $size * 0.25)));
 
-        return $this->pdfText($x, $y, $text, $size);
+        return $this->pdfText($x, $y, $text, $size, $color);
     }
 
     private function pdfRectangle(float $x, float $y, float $width, float $height): string
     {
-        return "{$x} {$y} {$width} {$height} re S\n";
+        return "0.3 w\n{$x} {$y} {$width} {$height} re S\n";
+    }
+
+    private function pdfFilledRectangle(float $x, float $y, float $width, float $height): string
+    {
+        return "{$x} {$y} {$width} {$height} re f\n";
     }
 
     private function pdfLimit(string $text, float $columnWidth): string
