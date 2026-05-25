@@ -8,14 +8,33 @@
     <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#locationModal" onclick="prepareAdd()">
         <i class="fa fa-plus me-2"></i> THÊM ĐỊA ĐIỂM
     </button>
+    <x-export-buttons />
 </div>
 
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+<div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
+    <form action="{{ route('locations.index') }}" method="GET" class="row g-3">
+        <div class="col-md-3"><input type="text" name="search" class="form-control border-light" placeholder="Tìm tất cả" value="{{ request('search') }}"></div>
+        <div class="col-md-2"><input type="text" name="location_code" class="form-control border-light" placeholder="Mã" value="{{ request('location_code') }}"></div>
+        <div class="col-md-2"><input type="text" name="location_name" class="form-control border-light" placeholder="Tên địa điểm" value="{{ request('location_name') }}"></div>
+        <div class="col-md-2">
+            <select name="type" class="form-select border-light">
+                <option value="">Tất cả loại</option>
+                @foreach(['port' => 'Cảng', 'depot' => 'Bãi', 'warehouse' => 'Kho', 'factory' => 'Nhà máy', 'other' => 'Khác'] as $value => $label)
+                    <option value="{{ $value }}" {{ request('type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select border-light">
+                <option value="">Tất cả trạng thái</option>
+                @foreach(['active' => 'Hoạt động', 'inactive' => 'Ngừng hoạt động', 'maintenance' => 'Bảo trì', 'overloaded' => 'Quá tải'] as $value => $label)
+                    <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-1"><button type="submit" class="btn btn-navy w-100">Lọc</button></div>
+    </form>
+</div>
 
 <!-- Data Table -->
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
@@ -23,17 +42,22 @@
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light">
                 <tr class="small text-muted text-uppercase">
-                    <th class="ps-4">Tên Địa Điểm</th>
+                    <th class="ps-4">Mã / Tên Địa Điểm</th>
                     <th>Loại</th>
                     <th>Địa chỉ</th>
                     <th>Tỉnh thành</th>
+                    <th>Trạng thái</th>
+                    <th>Ghi chú</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($locations as $location)
                     <tr>
-                        <td class="ps-4 fw-bold text-navy">{{ $location->location_name }}</td>
+                        <td class="ps-4">
+                            <div class="fw-bold text-navy">{{ $location->location_code ?? '---' }}</div>
+                            <div class="small">{{ $location->location_name }}</div>
+                        </td>
                         <td>
                             @php
                                 $badgeClass = match($location->type) {
@@ -55,6 +79,13 @@
                         </td>
                         <td class="small">{{ $location->address }}</td>
                         <td>{{ $location->province }}</td>
+                        <td>
+                            @php
+                                $statusName = ['active' => 'Hoạt động', 'inactive' => 'Ngừng hoạt động', 'maintenance' => 'Bảo trì', 'overloaded' => 'Quá tải'][$location->status] ?? $location->status;
+                            @endphp
+                            <span class="badge bg-light text-dark border">{{ $statusName }}</span>
+                        </td>
+                        <td class="small text-muted">{{ $location->note ?: '---' }}</td>
                         <td class="text-center">
                             <button class="btn btn-sm text-warning me-2" 
                                 onclick="prepareEdit({{ json_encode($location) }})"
@@ -72,7 +103,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">Chưa có dữ liệu địa điểm.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">Chưa có dữ liệu địa điểm.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -96,6 +127,10 @@
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Mã địa điểm</label>
+                            <input type="text" id="location_code" class="form-control bg-light border-0" value="Tự sinh theo loại" disabled>
+                        </div>
                         <div class="col-md-8">
                             <label class="form-label fw-semibold">Tên Địa Điểm</label>
                             <input type="text" name="location_name" id="location_name" class="form-control bg-light border-0" required>
@@ -114,9 +149,26 @@
                             <label class="form-label fw-semibold">Địa chỉ chi tiết</label>
                             <input type="text" name="address" id="address" class="form-control bg-light border-0" required>
                         </div>
-                        <div class="col-md-12">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Tỉnh / Thành phố</label>
-                            <input type="text" name="province" id="province" class="form-control bg-light border-0" required>
+                            <select name="province" id="province" class="form-select bg-light border-0" required>
+                                @foreach(\App\Support\LogisticsOptions::provincesNearHaiPhong() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <select name="status" id="status" class="form-select bg-light border-0" required>
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Ngừng hoạt động</option>
+                                <option value="maintenance">Bảo trì</option>
+                                <option value="overloaded">Quá tải</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ghi chú</label>
+                            <textarea name="note" id="note" class="form-control bg-light border-0" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
@@ -136,6 +188,8 @@
         document.getElementById('locationForm').action = "{{ route('locations.store') }}";
         document.getElementById('methodField').innerHTML = '';
         document.getElementById('locationForm').reset();
+        document.getElementById('location_code').value = 'Tự sinh theo loại';
+        document.getElementById('status').value = 'active';
     }
 
     function prepareEdit(location) {
@@ -144,9 +198,12 @@
         document.getElementById('methodField').innerHTML = '@method("PUT")';
         
         document.getElementById('location_name').value = location.location_name;
+        document.getElementById('location_code').value = location.location_code || '---';
         document.getElementById('type').value = location.type;
         document.getElementById('address').value = location.address;
         document.getElementById('province').value = location.province;
+        document.getElementById('status').value = location.status || 'active';
+        document.getElementById('note').value = location.note || '';
     }
 </script>
 @endpush

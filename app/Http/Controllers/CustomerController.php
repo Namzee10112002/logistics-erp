@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CustomerRequest;
 use App\Models\Customer;
 use App\Services\CustomerService;
+use App\Services\ExportService;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -15,6 +16,22 @@ class CustomerController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->filled('export')) {
+            $customers = $this->customerService->getAll($request->all(), 10000)->getCollection();
+
+            return app(ExportService::class)->download((string) $request->string('export'), 'Danh sách khách hàng', 'Tất cả dữ liệu đang lọc', [
+                'Mã KH', 'Khách hàng', 'Công ty', 'MST', 'Email', 'Người liên hệ', 'SĐT',
+            ], $customers->map(fn (Customer $customer): array => [
+                $customer->customer_code,
+                $customer->customer_name,
+                $customer->company_name,
+                $customer->tax_code,
+                $customer->email,
+                $customer->contact_person,
+                $customer->phone,
+            ])->all());
+        }
+
         $customers = $this->customerService->getAll($request->all());
 
         return view('customers.index', compact('customers'));

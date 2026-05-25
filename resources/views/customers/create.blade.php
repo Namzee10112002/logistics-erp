@@ -35,7 +35,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Mã Số Thuế <span class="text-danger">*</span></label>
-                <input type="text" name="tax_code" class="form-control @error('tax_code') is-invalid @enderror" value="{{ old('tax_code') }}" required>
+                <input type="text" name="tax_code" class="form-control @error('tax_code') is-invalid @enderror" value="{{ old('tax_code') }}" maxlength="10" inputmode="numeric" required>
                 @error('tax_code')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -51,7 +51,7 @@
 
             <div class="col-md-4">
                 <label class="form-label fw-bold">Số điện thoại liên hệ</label>
-                <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
+                <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" maxlength="10" inputmode="numeric">
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Email</label>
@@ -59,7 +59,12 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Người liên hệ</label>
-                <input type="text" name="contact_person" class="form-control" value="{{ old('contact_person') }}">
+                <select name="contact_person" class="form-select">
+                    <option value="">Chọn người liên hệ</option>
+                    @foreach(\App\Support\LogisticsOptions::customerContactRoles() as $value => $label)
+                        <option value="{{ $value }}" {{ old('contact_person') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="col-12 mt-5">

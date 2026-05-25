@@ -37,9 +37,13 @@ class UserFactory extends Factory
             'employee_code' => 'NV-'.fake()->unique()->numerify('######'),
             'position' => fake()->jobTitle(),
             'department' => fake()->randomElement(['Kinh doanh', 'Chứng từ', 'Điều vận', 'Kế toán', 'Đội xe']),
+            'date_of_birth' => fake()->dateTimeBetween('-55 years', '-22 years'),
             'joined_at' => fake()->dateTimeBetween('-4 years', '-1 month'),
             'theme_color' => fake()->randomElement(['#1a237e', '#0f766e', '#0369a1', '#854d0e', '#166534']),
             'is_dark_mode' => fake()->boolean(20),
+            'timezone' => 'Asia/Ho_Chi_Minh',
+            'date_format' => 'd/m/Y',
+            'two_factor_enabled' => false,
             'remember_token' => Str::random(10),
         ];
     }

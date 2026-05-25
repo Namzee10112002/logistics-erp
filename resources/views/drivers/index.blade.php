@@ -8,14 +8,8 @@
     <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#driverModal" onclick="prepareAdd()">
         <i class="fa fa-plus me-2"></i> THÊM TÀI XẾ
     </button>
+    <x-export-buttons />
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('drivers.index') }}" method="GET" class="row g-3">
@@ -23,7 +17,12 @@
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã tài xế, tên, GPLX, cấp bậc..." value="{{ request('search') }}">
         </div>
         <div class="col-md-3">
-            <input type="text" name="rank" class="form-control border-light" placeholder="Cấp bậc" value="{{ request('rank') }}">
+            <select name="rank" class="form-select border-light">
+                <option value="">Cấp bậc</option>
+                @foreach(\App\Support\LogisticsOptions::driverRanks() as $value => $label)
+                    <option value="{{ $value }}" {{ request('rank') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="col-md-2">
             <select name="status" class="form-select border-light">
@@ -35,6 +34,10 @@
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
+        <div class="col-md-3"><input type="text" name="driver_code" class="form-control border-light" placeholder="Mã tài xế" value="{{ request('driver_code') }}"></div>
+        <div class="col-md-3"><input type="text" name="full_name" class="form-control border-light" placeholder="Họ tên" value="{{ request('full_name') }}"></div>
+        <div class="col-md-3"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
+        <div class="col-md-3"><input type="text" name="license_number" class="form-control border-light" placeholder="GPLX" value="{{ request('license_number') }}"></div>
     </form>
 </div>
 
@@ -46,6 +49,7 @@
                 <tr class="small text-muted text-uppercase">
                     <th class="ps-4">Mã / Họ và Tên</th>
                     <th>Số Điện Thoại</th>
+                    <th>Ngày sinh</th>
                     <th>Số Bằng Lái</th>
                     <th>Cấp bậc / Hợp đồng</th>
                     <th>Trạng Thái</th>
@@ -62,6 +66,7 @@
                             <div class="small text-muted">Vào làm: {{ $driver->start_date?->format('d/m/Y') ?? '---' }}</div>
                         </td>
                         <td>{{ $driver->phone }}</td>
+                        <td>{{ $driver->date_of_birth?->format('d/m/Y') ?? '---' }}</td>
                         <td><code>{{ $driver->license_number }}</code></td>
                         <td>
                             <div class="fw-bold">{{ $driver->rank ?: '---' }}</div>
@@ -90,7 +95,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">Chưa có dữ liệu tài xế.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">Chưa có dữ liệu tài xế.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -120,7 +125,11 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Điện Thoại</label>
-                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" required>
+                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ngày sinh</label>
+                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" required>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Bằng Lái</label>
@@ -132,7 +141,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Cấp bậc</label>
-                            <input type="text" name="rank" id="rank" class="form-control bg-light border-0" placeholder="VD: Chính, phụ, tổ trưởng...">
+                            <select name="rank" id="rank" class="form-select bg-light border-0">
+                                <option value="">Chọn cấp bậc</option>
+                                @foreach(\App\Support\LogisticsOptions::driverRanks() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Thời hạn hợp đồng</label>
@@ -176,6 +190,7 @@
         
         document.getElementById('full_name').value = driver.full_name;
         document.getElementById('phone').value = driver.phone;
+        document.getElementById('date_of_birth').value = driver.date_of_birth ? driver.date_of_birth.split('T')[0].split(' ')[0] : '';
         document.getElementById('license_number').value = driver.license_number;
         document.getElementById('status').value = driver.status;
         document.getElementById('start_date').value = driver.start_date ? driver.start_date.split('T')[0].split(' ')[0] : '';

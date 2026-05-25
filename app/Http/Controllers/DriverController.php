@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DriverRequest;
 use App\Models\Driver;
 use App\Services\DriverService;
+use App\Services\ExportService;
 use Illuminate\Http\Request;
 
 class DriverController extends Controller
@@ -15,6 +16,23 @@ class DriverController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->filled('export')) {
+            $drivers = $this->driverService->getAll($request->all(), 10000)->getCollection();
+
+            return app(ExportService::class)->download((string) $request->string('export'), 'Danh sách tài xế', 'Tất cả dữ liệu đang lọc', [
+                'Mã', 'Họ tên', 'SĐT', 'Ngày sinh', 'GPLX', 'Cấp bậc', 'Ngày vào làm', 'Trạng thái',
+            ], $drivers->map(fn (Driver $driver): array => [
+                $driver->driver_code,
+                $driver->full_name,
+                $driver->phone,
+                $driver->date_of_birth?->format('d/m/Y'),
+                $driver->license_number,
+                $driver->rank,
+                $driver->start_date?->format('d/m/Y'),
+                $driver->status,
+            ])->all());
+        }
+
         $drivers = $this->driverService->getAll($request->all());
 
         return view('drivers.index', compact('drivers'));

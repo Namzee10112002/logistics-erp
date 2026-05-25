@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VehicleRequest;
 use App\Models\Vehicle;
+use App\Services\ExportService;
 use App\Services\VehicleService;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,21 @@ class VehicleController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->filled('export')) {
+            $vehicles = $this->vehicleService->getAll($request->all(), 10000)->getCollection();
+
+            return app(ExportService::class)->download((string) $request->string('export'), 'Danh sách đội xe', 'Tất cả dữ liệu đang lọc', [
+                'Biển số', 'Loại xe', 'Tải trọng', 'Hạn đăng kiểm', 'Trạng thái', 'Ghi chú',
+            ], $vehicles->map(fn (Vehicle $vehicle): array => [
+                $vehicle->plate_number,
+                $vehicle->vehicle_type,
+                $vehicle->payload,
+                $vehicle->registration_expiry,
+                $vehicle->status,
+                $vehicle->note,
+            ])->all());
+        }
+
         $vehicles = $this->vehicleService->getAll($request->all());
 
         return view('vehicles.index', compact('vehicles'));

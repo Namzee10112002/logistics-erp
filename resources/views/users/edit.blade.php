@@ -40,15 +40,27 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">Chức vụ</label>
-                                <input type="text" name="position" class="form-control" value="{{ old('position', $user->position) }}">
+                                <select name="position" class="form-select" required>
+                                    @foreach($positions as $value => $label)
+                                        <option value="{{ $value }}" {{ old('position', $user->position) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold">Bộ phận / phòng ban</label>
-                                <input type="text" name="department" class="form-control" value="{{ old('department', $user->department) }}">
+                                <select name="department" class="form-select" required>
+                                    @foreach($departments as $value => $label)
+                                        <option value="{{ $value }}" {{ old('department', $user->department) === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Ngày sinh</label>
+                                <input type="date" name="date_of_birth" class="form-control" value="{{ old('date_of_birth', $user->date_of_birth?->format('Y-m-d')) }}" required>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label fw-bold">Ngày tham gia</label>
-                                <input type="date" name="joined_at" class="form-control" value="{{ old('joined_at', $user->joined_at?->format('Y-m-d')) }}">
+                                <input type="date" name="joined_at" class="form-control" value="{{ old('joined_at', $user->joined_at?->format('Y-m-d') ?? now()->toDateString()) }}" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}" required>
                             </div>
                         </div>
 
@@ -71,6 +83,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold">Mật khẩu mới</label>
                                     <input type="password" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror">
+                                    <div class="form-text">Có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold">Xác nhận mật khẩu</label>

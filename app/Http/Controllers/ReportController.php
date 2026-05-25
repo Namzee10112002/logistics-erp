@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DispatchOrder;
 use App\Models\Driver;
 use App\Models\RecurringExpense;
 use App\Models\ShippingJob;
 use App\Models\Vehicle;
+use App\Services\ExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
@@ -51,18 +53,41 @@ class ReportController extends Controller
             ->limit(5)
             ->get();
 
-        if ($request->query('export') === 'excel') {
-            return $this->streamCsv('bao_cao_van_hanh.csv', [
-                ['Kỳ báo cáo', $periodLabel],
-                ['Tổng xe', $totalVehicles],
-                ['Xe đang hoạt động', $activeVehicles],
-                [],
-                ['Top tài xế', 'Số chuyến hoàn thành'],
-                ...$topDrivers->map(fn ($driver) => [$driver->full_name, $driver->total_jobs])->all(),
-            ]);
+        $driverProductivity = DispatchOrder::with('driver')
+            ->where('dispatch_status', 'completed')
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->get()
+            ->groupBy('driver_id')
+            ->map(function ($orders) {
+                $hours = $orders->sum(function (DispatchOrder $order): float {
+                    if (! $order->start_time || ! $order->end_time) {
+                        return 0;
+                    }
+
+                    return round($order->start_time->diffInMinutes($order->end_time) / 60, 2);
+                });
+
+                return (object) [
+                    'full_name' => $orders->first()->driver?->full_name ?? '---',
+                    'total_trips' => $orders->count(),
+                    'total_days' => $orders->pluck('start_time')->filter()->map->format('Y-m-d')->unique()->count(),
+                    'total_hours' => $hours,
+                ];
+            })
+            ->values();
+
+        if ($request->filled('export')) {
+            return app(ExportService::class)->download((string) $request->string('export'), 'Báo cáo vận hành', $periodLabel, [
+                'Tài xế', 'Số chuyến hoàn thành', 'Số ngày chạy', 'Tổng giờ chạy',
+            ], $driverProductivity->map(fn ($driver): array => [
+                $driver->full_name,
+                $driver->total_trips,
+                $driver->total_days,
+                $driver->total_hours,
+            ])->all());
         }
 
-        return view('reports.operational', compact('jobStatuses', 'totalVehicles', 'activeVehicles', 'topDrivers', 'vehicleStats', 'periodLabel'));
+        return view('reports.operational', compact('jobStatuses', 'totalVehicles', 'activeVehicles', 'topDrivers', 'vehicleStats', 'driverProductivity', 'periodLabel'));
     }
 
     public function financial(Request $request)
@@ -102,9 +127,10 @@ class ReportController extends Controller
             ->select('debit_notes.*', 'customers.company_name as customer_name')
             ->get();
 
-        if ($request->query('export') === 'excel') {
-            return $this->streamCsv('bao_cao_tai_chinh.csv', [
-                ['Kỳ báo cáo', $periodLabel],
+        if ($request->filled('export')) {
+            return app(ExportService::class)->download((string) $request->string('export'), 'Báo cáo tài chính', $periodLabel, [
+                'Chỉ tiêu', 'Giá trị',
+            ], [
                 ['Tổng doanh thu', $totalRevenue],
                 ['Chi phí phát sinh đã duyệt', $totalExpenses],
                 ['Chi phí cố định hàng tháng', $recurringMonthlyTotal],

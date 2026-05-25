@@ -15,7 +15,7 @@
     <div class="col-lg-4">
         <div class="card border-0 rounded-4 shadow-sm mb-4">
             <div class="card-header bg-navy text-white p-4 rounded-top-4">
-                <h6 class="mb-0 fw-bold"><i class="fa fa-info-circle me-2"></i> Tóm tắt đơn hàng</h6>
+                <h6 class="mb-0 fw-bold"><i class="fa fa-info-circle me-2"></i> Thông tin đơn hàng</h6>
             </div>
             <div class="card-body p-4">
                 <div class="mb-3">
@@ -33,7 +33,7 @@
                 <div class="mb-0">
                     <label class="small text-muted d-block">Hàng hóa:</label>
                     <span class="fw-bold">{{ $shippingJob->cargo_type }}</span>
-                    <span class="small text-muted">({{ $shippingJob->container_number ?? 'N/A' }})</span>
+                    <div class="small text-muted">Cont: {{ $shippingJob->container_number ?? 'N/A' }} / {{ $shippingJob->container_type ?? 'Hàng lẻ' }}</div>
                 </div>
             </div>
         </div>
@@ -78,6 +78,21 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Chọn Mooc/Rơ-mooc</label>
+                        <select name="trailer_id" class="form-select @error('trailer_id') is-invalid @enderror">
+                            <option value="">-- Không chọn --</option>
+                            @foreach($trailers as $trailer)
+                                <option value="{{ $trailer->id }}" {{ old('trailer_id') == $trailer->id ? 'selected' : '' }}>
+                                    {{ $trailer->plate_number }} ({{ $trailer->vehicle_type }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('trailer_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label fw-bold text-navy">Địa điểm bắt đầu</label>
                         <select name="start_location_id" class="form-select">
                             <option value="">Theo điểm bốc của đơn hàng</option>
@@ -102,6 +117,18 @@
                     </div>
 
                     <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Ngày đi <span class="text-danger">*</span></label>
+                        <input type="date" name="planned_departure_date" class="form-control @error('planned_departure_date') is-invalid @enderror" value="{{ old('planned_departure_date', now()->toDateString()) }}" required>
+                        @error('planned_departure_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Ngày về <span class="text-danger">*</span></label>
+                        <input type="date" name="planned_return_date" class="form-control @error('planned_return_date') is-invalid @enderror" value="{{ old('planned_return_date', now()->addDay()->toDateString()) }}" required>
+                        @error('planned_return_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="col-md-6">
                         <label class="form-label fw-bold text-navy">Định mức Nhiên liệu (Lít)</label>
                         <div class="input-group">
                             <input type="number" step="0.1" name="fuel_quota" class="form-control" placeholder="0.0">
@@ -114,6 +141,14 @@
                         <div class="input-group">
                             <input type="number" name="toll_quota" class="form-control" placeholder="0">
                             <span class="input-group-text bg-light border-start-0">VNĐ</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-navy">Định mức giá dầu (VNĐ/Lít)</label>
+                        <div class="input-group">
+                            <input type="number" name="fuel_price_quota" class="form-control" placeholder="0">
+                            <span class="input-group-text bg-light border-start-0">VNĐ/Lít</span>
                         </div>
                     </div>
 
@@ -138,7 +173,7 @@
                     </div>
 
                     <div class="col-12 mt-5">
-                        <button type="submit" class="btn btn-navy px-5 py-2 fw-bold">XÁC NHẬN ĐIỀU XE</button>
+                        <button type="submit" class="btn btn-navy px-5 py-2 fw-bold">GỬI KẾ TOÁN DUYỆT</button>
                         <a href="{{ route('shipping-jobs.show', $shippingJob->id) }}" class="btn btn-light px-5 py-2 fw-bold ms-2">HỦY</a>
                     </div>
                 </div>

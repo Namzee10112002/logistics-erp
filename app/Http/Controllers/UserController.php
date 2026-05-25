@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ExportService;
+use App\Support\LogisticsOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -30,9 +33,37 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->paginate(10);
+        foreach (['employee_code', 'name', 'email', 'position', 'department'] as $field) {
+            if (request()->filled($field)) {
+                $query->where($field, 'like', '%'.request($field).'%');
+            }
+        }
 
-        return view('users.index', compact('users'));
+        if (request()->filled('role_id')) {
+            $query->where('role_id', request('role_id'));
+        }
+
+        if (request()->filled('export')) {
+            $users = $query->latest()->limit(10000)->get();
+
+            return app(ExportService::class)->download((string) request()->string('export'), 'Danh sách nhân sự', 'Tất cả dữ liệu đang lọc', [
+                'Mã nhân sự', 'Họ tên', 'Email', 'Vai trò', 'Chức vụ', 'Bộ phận', 'Ngày sinh', 'Ngày tham gia',
+            ], $users->map(fn (User $user): array => [
+                $user->employee_code,
+                $user->name,
+                $user->email,
+                $user->role?->role_name,
+                $user->position,
+                $user->department,
+                $user->date_of_birth?->format('d/m/Y'),
+                $user->joined_at?->format('d/m/Y'),
+            ])->all());
+        }
+
+        $users = $query->paginate(10);
+        $roles = Role::orderBy('role_name')->get();
+
+        return view('users.index', compact('users', 'roles'));
     }
 
     public function create()
@@ -44,8 +75,10 @@ class UserController extends Controller
         }
 
         $roles = $rolesQuery->get();
+        $positions = LogisticsOptions::positions();
+        $departments = LogisticsOptions::departments();
 
-        return view('users.create', compact('roles'));
+        return view('users.create', compact('roles', 'positions', 'departments'));
     }
 
     public function store(Request $request)
@@ -53,11 +86,12 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role_id' => 'required|exists:roles,id',
-            'position' => 'nullable|string|max:100',
-            'department' => 'nullable|string|max:100',
-            'joined_at' => 'nullable|date',
+            'position' => 'required|in:'.implode(',', array_keys(LogisticsOptions::positions())),
+            'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
+            'date_of_birth' => 'required|date|before:today',
+            'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
         ]);
 
         // Extra check for DISPATCH
@@ -79,6 +113,7 @@ class UserController extends Controller
             'status' => 1,
             'position' => $request->position,
             'department' => $request->department,
+            'date_of_birth' => $request->date_of_birth,
             'joined_at' => $request->joined_at,
         ]);
 
@@ -99,8 +134,10 @@ class UserController extends Controller
             $rolesQuery->whereIn('role_code', ['DRIVER', 'FIELD']);
         }
         $roles = $rolesQuery->get();
+        $positions = LogisticsOptions::positions();
+        $departments = LogisticsOptions::departments();
 
-        return view('users.edit', compact('user', 'roles'));
+        return view('users.edit', compact('user', 'roles', 'positions', 'departments'));
     }
 
     public function update(Request $request, User $user)
@@ -116,9 +153,10 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'role_id' => 'required|exists:roles,id',
-            'position' => 'nullable|string|max:100',
-            'department' => 'nullable|string|max:100',
-            'joined_at' => 'nullable|date',
+            'position' => 'required|in:'.implode(',', array_keys(LogisticsOptions::positions())),
+            'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
+            'date_of_birth' => 'required|date|before:today',
+            'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
         ]);
 
         // Extra check for DISPATCH role selection
@@ -136,11 +174,12 @@ class UserController extends Controller
             'role_id' => $request->role_id,
             'position' => $request->position,
             'department' => $request->department,
+            'date_of_birth' => $request->date_of_birth,
             'joined_at' => $request->joined_at,
         ]);
 
         if ($request->filled('password')) {
-            $request->validate(['password' => 'string|min:8|confirmed']);
+            $request->validate(['password' => ['confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]]);
             $user->update(['password' => Hash::make($request->password)]);
         }
 

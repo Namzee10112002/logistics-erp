@@ -15,7 +15,8 @@ class DriverFactory extends Factory
         return [
             'driver_code' => 'TX-'.fake()->unique()->numerify('######'),
             'full_name' => fake()->name(),
-            'phone' => fake()->phoneNumber(),
+            'phone' => '0'.fake()->numerify('#########'),
+            'date_of_birth' => fake()->dateTimeBetween('-55 years', '-22 years'),
             'license_number' => 'GPLX-'.fake()->numerify('############'),
             'status' => fake()->randomElement(['active', 'inactive']),
             'start_date' => fake()->dateTimeBetween('-5 years', '-1 month'),

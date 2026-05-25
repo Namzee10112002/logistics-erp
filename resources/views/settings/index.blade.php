@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Cài đặt - NT Logistics')
+@section('title', 'Thông tin công ty - NT Logistics')
 
 @section('content')
 <div class="container-fluid py-4">
     <div class="row mb-4">
         <div class="col-12">
-            <h4 class="fw-bold text-navy">Cài đặt</h4>
-            <p class="text-muted small">Quản lý thông tin công ty, tham số vận hành và bảo mật dữ liệu.</p>
+            <h4 class="fw-bold text-navy">Thông tin công ty</h4>
+            <p class="text-muted small">Quản lý hồ sơ doanh nghiệp, địa chỉ, người liên hệ và thông tin xuất báo cáo.</p>
         </div>
     </div>
 
@@ -43,7 +43,7 @@
                             <h6 class="fw-bold mb-1">Lưu thay đổi</h6>
                             <p class="small mb-0 opacity-75">Tất cả thay đổi sẽ được áp dụng ngay lập tức trên toàn hệ thống.</p>
                         </div>
-                        <button type="submit" class="btn btn-light fw-bold px-4">LƯU CÀI ĐẶT</button>
+                        <button type="submit" class="btn btn-light fw-bold px-4">LƯU THÔNG TIN</button>
                     </div>
                 </div>
             </form>
@@ -61,6 +61,15 @@
                     <a href="{{ route('settings.backup') }}" class="btn btn-navy w-100 fw-bold py-2">
                         <i class="fa fa-download me-2"></i> TẢI BẢN SAO LƯU (.CSV)
                     </a>
+                </div>
+            </div>
+
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold text-navy mb-3">Bản đồ công ty</h6>
+                    <div class="ratio ratio-4x3 rounded-3 overflow-hidden border">
+                        <iframe src="https://maps.google.com/maps?q=Hai%20Phong%20Vietnam&t=&z=11&ie=UTF8&iwloc=&output=embed" loading="lazy"></iframe>
+                    </div>
                 </div>
             </div>
 

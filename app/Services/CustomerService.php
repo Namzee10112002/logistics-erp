@@ -25,6 +25,12 @@ class CustomerService
             });
         }
 
+        foreach (['customer_code', 'customer_name', 'tax_code', 'email', 'contact_person', 'phone'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
         return $query->latest()->paginate($perPage);
     }
 

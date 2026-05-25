@@ -35,6 +35,7 @@ class FieldStaffManagementTest extends TestCase
                 'user_id' => $fieldUser->id,
                 'full_name' => 'Nguyễn Văn Hiện Trường',
                 'phone' => '0909009009',
+                'date_of_birth' => '1995-05-21',
                 'certificates' => 'Chứng chỉ an toàn kho bãi',
                 'responsible_location_id' => $location->id,
                 'start_date' => '2026-05-18',
@@ -81,6 +82,8 @@ class FieldStaffManagementTest extends TestCase
         $this->actingAs($admin)
             ->post(route('field-staff.store'), [
                 'full_name' => 'Nhân viên cảng',
+                'phone' => '0909009009',
+                'date_of_birth' => '1995-05-21',
                 'responsible_location_id' => $port->id,
                 'status' => 'active',
             ])

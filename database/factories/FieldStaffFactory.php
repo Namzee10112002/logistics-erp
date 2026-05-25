@@ -21,7 +21,8 @@ class FieldStaffFactory extends Factory
         return [
             'staff_code' => 'HT-'.fake()->unique()->numerify('######'),
             'full_name' => fake()->name(),
-            'phone' => fake()->phoneNumber(),
+            'phone' => '0'.fake()->numerify('#########'),
+            'date_of_birth' => fake()->dateTimeBetween('-55 years', '-22 years'),
             'certificates' => fake()->randomElement(['Chứng chỉ an toàn kho bãi', 'Chứng chỉ nghiệp vụ hải quan', 'Chứng chỉ PCCC cơ bản']),
             'responsible_location_id' => Location::factory()->state(['type' => 'warehouse']),
             'start_date' => fake()->dateTimeBetween('-3 years', '-1 month'),

@@ -18,6 +18,7 @@ class Driver extends Model
         'driver_code',
         'full_name',
         'phone',
+        'date_of_birth',
         'license_number',
         'status',
         'start_date',
@@ -40,6 +41,7 @@ class Driver extends Model
     {
         return [
             'start_date' => 'date',
+            'date_of_birth' => 'date',
             'contract_expiry' => 'date',
         ];
     }

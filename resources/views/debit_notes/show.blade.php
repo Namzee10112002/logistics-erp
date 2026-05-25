@@ -128,7 +128,7 @@
                 <tbody>
                     @foreach($debitNote->payments as $payment)
                         <tr>
-                            <td>{{ $payment->payment_date->format('d/m/Y H:i') }}</td>
+                            <td>{{ $payment->payment_date->format('d/m/Y') }}</td>
                             <td>{{ $payment->payment_method }}</td>
                             <td>{{ $payment->reference_no ?? '---' }}</td>
                             <td class="text-end fw-bold">{{ number_format($payment->amount_paid) }}</td>

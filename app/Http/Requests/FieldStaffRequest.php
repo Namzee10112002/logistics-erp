@@ -31,7 +31,8 @@ class FieldStaffRequest extends FormRequest
                 Rule::unique('field_staff', 'user_id')->ignore($fieldStaffId),
             ],
             'full_name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['required', 'regex:/^0\d{9}$/'],
+            'date_of_birth' => ['required', 'date', 'before:today'],
             'certificates' => ['nullable', 'string', 'max:1000'],
             'responsible_location_id' => [
                 'required',
@@ -49,6 +50,8 @@ class FieldStaffRequest extends FormRequest
             'user_id.exists' => 'Tài khoản liên kết phải thuộc vai trò Nhân viên hiện trường.',
             'user_id.unique' => 'Tài khoản này đã được liên kết với một nhân viên hiện trường khác.',
             'full_name.required' => 'Vui lòng nhập họ tên nhân viên hiện trường.',
+            'phone.regex' => 'Số điện thoại phải gồm đúng 10 số và bắt đầu bằng 0.',
+            'date_of_birth.required' => 'Vui lòng nhập ngày sinh nhân viên hiện trường.',
             'responsible_location_id.required' => 'Vui lòng chọn khu vực phụ trách.',
             'responsible_location_id.exists' => 'Khu vực phụ trách phải là kho hoặc bãi hợp lệ.',
         ];

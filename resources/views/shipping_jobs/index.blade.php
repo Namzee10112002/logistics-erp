@@ -10,14 +10,8 @@
         <i class="fa fa-plus me-2"></i> TẠO ĐƠN HÀNG MỚI
     </a>
     @endif
+    <x-export-buttons />
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
@@ -57,6 +51,11 @@
         <div class="col-md-2">
             <a href="{{ route('shipping-jobs.index') }}" class="btn btn-light w-100">Xóa lọc</a>
         </div>
+        <div class="col-md-2"><input type="text" name="job_code" class="form-control border-light" placeholder="Mã Job" value="{{ request('job_code') }}"></div>
+        <div class="col-md-2"><input type="text" name="container_number" class="form-control border-light" placeholder="Số Cont" value="{{ request('container_number') }}"></div>
+        <div class="col-md-2"><input type="text" name="customs_declaration_no" class="form-control border-light" placeholder="Tờ khai" value="{{ request('customs_declaration_no') }}"></div>
+        <div class="col-md-2"><input type="text" name="cargo_type" class="form-control border-light" placeholder="Hàng hóa" value="{{ request('cargo_type') }}"></div>
+        <div class="col-md-2"><input type="text" name="container_type" class="form-control border-light" placeholder="Loại cont" value="{{ request('container_type') }}"></div>
     </form>
 </div>
 
@@ -81,7 +80,7 @@
                     <tr>
                         <td class="ps-4">
                             <div class="fw-bold text-navy">{{ $job->job_code }}</div>
-                            <div class="small text-muted">{{ $job->created_at->format('d/m/Y H:i') }}</div>
+                            <div class="small text-muted">{{ $job->created_at->format('d/m/Y') }}</div>
                         </td>
                         <td>
                             <div class="fw-bold text-truncate" style="max-width: 200px;">{{ $job->customer->customer_name }}</div>

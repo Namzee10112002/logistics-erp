@@ -6,6 +6,7 @@ use App\Http\Requests\FieldStaffRequest;
 use App\Models\FieldStaff;
 use App\Models\Location;
 use App\Models\User;
+use App\Services\ExportService;
 use App\Services\FieldStaffService;
 use Illuminate\Http\Request;
 
@@ -17,6 +18,22 @@ class FieldStaffController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->filled('export')) {
+            $staff = $this->fieldStaffService->getAll($request->all(), 10000)->getCollection();
+
+            return app(ExportService::class)->download((string) $request->string('export'), 'Danh sách nhân viên hiện trường', 'Tất cả dữ liệu đang lọc', [
+                'Mã', 'Họ tên', 'SĐT', 'Ngày sinh', 'Khu vực', 'Chứng chỉ', 'Trạng thái',
+            ], $staff->map(fn (FieldStaff $fieldStaff): array => [
+                $fieldStaff->staff_code,
+                $fieldStaff->full_name,
+                $fieldStaff->phone,
+                $fieldStaff->date_of_birth?->format('d/m/Y'),
+                $fieldStaff->responsibleLocation?->location_name,
+                $fieldStaff->certificates,
+                $fieldStaff->status,
+            ])->all());
+        }
+
         $fieldStaff = $this->fieldStaffService->getAll($request->all());
         $responsibleLocations = Location::query()
             ->whereIn('type', ['depot', 'warehouse'])

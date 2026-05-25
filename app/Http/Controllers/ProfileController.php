@@ -24,7 +24,10 @@ class ProfileController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'theme_color' => ['required', 'string', 'max:7'],
             'is_dark_mode' => ['boolean'],
-            'password' => ['nullable', 'confirmed', Password::defaults()],
+            'timezone' => ['required', 'in:Asia/Ho_Chi_Minh,Asia/Bangkok,UTC'],
+            'date_format' => ['required', 'in:d/m/Y,Y-m-d,d-m-Y'],
+            'two_factor_enabled' => ['boolean'],
+            'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
         $user->update([
@@ -33,6 +36,9 @@ class ProfileController extends Controller
             'email' => $request->email,
             'theme_color' => $request->theme_color,
             'is_dark_mode' => $request->boolean('is_dark_mode'),
+            'timezone' => $request->timezone,
+            'date_format' => $request->date_format,
+            'two_factor_enabled' => $request->boolean('two_factor_enabled'),
         ]);
 
         if ($request->filled('password')) {

@@ -32,9 +32,13 @@ class User extends Authenticatable
         'employee_code',
         'position',
         'department',
+        'date_of_birth',
         'joined_at',
         'theme_color',
         'is_dark_mode',
+        'timezone',
+        'date_format',
+        'two_factor_enabled',
     ];
 
     public function role(): BelongsTo
@@ -82,7 +86,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'joined_at' => 'date',
+            'date_of_birth' => 'date',
             'is_dark_mode' => 'boolean',
+            'two_factor_enabled' => 'boolean',
         ];
     }
 }

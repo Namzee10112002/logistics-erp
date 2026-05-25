@@ -13,6 +13,7 @@
             <a href="{{ route('users.create') }}" class="btn btn-navy fw-bold px-4">
                 <i class="fa fa-user-plus me-2"></i> THÊM NHÂN VIÊN
             </a>
+            <x-export-buttons />
         </div>
     </div>
 
@@ -23,6 +24,19 @@
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-navy w-100">Lọc</button>
+            </div>
+            <div class="col-md-2"><input type="text" name="employee_code" class="form-control border-light" placeholder="Mã" value="{{ request('employee_code') }}"></div>
+            <div class="col-md-2"><input type="text" name="name" class="form-control border-light" placeholder="Họ tên" value="{{ request('name') }}"></div>
+            <div class="col-md-2"><input type="text" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}"></div>
+            <div class="col-md-2"><input type="text" name="position" class="form-control border-light" placeholder="Chức vụ" value="{{ request('position') }}"></div>
+            <div class="col-md-2"><input type="text" name="department" class="form-control border-light" placeholder="Bộ phận" value="{{ request('department') }}"></div>
+            <div class="col-md-2">
+                <select name="role_id" class="form-select border-light">
+                    <option value="">Vai trò</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role->id }}" {{ (string) request('role_id') === (string) $role->id ? 'selected' : '' }}>{{ $role->role_name }}</option>
+                    @endforeach
+                </select>
             </div>
         </form>
     </div>
@@ -38,6 +52,7 @@
                             <th>Vai trò</th>
                             <th>Chức vụ</th>
                             <th>Bộ phận</th>
+                            <th>Ngày sinh</th>
                             <th>Ngày tham gia</th>
                             <th class="text-center">Thao tác</th>
                         </tr>
@@ -64,6 +79,7 @@
                                 </td>
                                 <td>{{ $user->position ?? '---' }}</td>
                                 <td>{{ $user->department ?? '---' }}</td>
+                                <td>{{ $user->date_of_birth?->format('d/m/Y') ?? '---' }}</td>
                                 <td>{{ $user->joined_at?->format('d/m/Y') ?? $user->created_at->format('d/m/Y') }}</td>
                                 <td class="text-center">
                                     <div class="btn-group">

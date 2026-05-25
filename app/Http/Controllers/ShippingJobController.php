@@ -6,7 +6,9 @@ use App\Http\Requests\ShippingJobRequest;
 use App\Models\Customer;
 use App\Models\Location;
 use App\Models\ShippingJob;
+use App\Services\ExportService;
 use App\Services\ShippingJobService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ShippingJobController extends Controller
@@ -17,6 +19,24 @@ class ShippingJobController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->filled('export')) {
+            $jobs = $this->shippingJobService->getAll($request->all(), 10000)->getCollection();
+
+            return app(ExportService::class)->download((string) $request->string('export'), 'Danh sách đơn hàng', 'Tất cả dữ liệu đang lọc', [
+                'Mã đơn', 'Khách hàng', 'Số cont', 'Loại cont', 'Hàng hóa', 'Điểm bốc', 'Điểm dỡ', 'Ngày dự kiến', 'Trạng thái',
+            ], $jobs->map(fn (ShippingJob $job): array => [
+                $job->job_code,
+                $job->customer?->customer_name,
+                $job->container_number,
+                $job->container_type,
+                $job->cargo_type,
+                $job->pickupLocation?->location_name,
+                $job->deliveryLocation?->location_name,
+                $job->expected_date ? Carbon::parse($job->expected_date)->format('d/m/Y') : null,
+                $job->status,
+            ])->all());
+        }
+
         $shippingJobs = $this->shippingJobService->getAll($request->all());
         $customers = Customer::orderBy('customer_name')->get();
 

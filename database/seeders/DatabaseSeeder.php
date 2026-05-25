@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'admin@example.test',
                 'position' => 'Giám đốc vận hành',
                 'department' => 'Ban điều hành',
+                'date_of_birth' => now()->subYears(38)->toDateString(),
                 'theme_color' => '#1a237e',
                 'is_dark_mode' => false,
             ],
@@ -86,6 +87,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'sales@example.test',
                 'position' => 'Nhân viên kinh doanh',
                 'department' => 'Kinh doanh',
+                'date_of_birth' => now()->subYears(30)->toDateString(),
                 'theme_color' => '#0f766e',
                 'is_dark_mode' => false,
             ],
@@ -96,6 +98,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'document@example.test',
                 'position' => 'Chuyên viên chứng từ',
                 'department' => 'Chứng từ',
+                'date_of_birth' => now()->subYears(29)->toDateString(),
                 'theme_color' => '#7c2d12',
                 'is_dark_mode' => false,
             ],
@@ -106,6 +109,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'dispatch@example.test',
                 'position' => 'Điều phối vận tải',
                 'department' => 'Điều vận',
+                'date_of_birth' => now()->subYears(34)->toDateString(),
                 'theme_color' => '#0369a1',
                 'is_dark_mode' => true,
             ],
@@ -116,6 +120,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'accountant@example.test',
                 'position' => 'Kế toán công nợ',
                 'department' => 'Kế toán',
+                'date_of_birth' => now()->subYears(32)->toDateString(),
                 'theme_color' => '#854d0e',
                 'is_dark_mode' => false,
             ],
@@ -126,6 +131,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'field@example.test',
                 'position' => 'Nhân viên hiện trường',
                 'department' => 'Hiện trường',
+                'date_of_birth' => now()->subYears(28)->toDateString(),
                 'theme_color' => '#166534',
                 'is_dark_mode' => false,
             ],
@@ -136,6 +142,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'driver@example.test',
                 'position' => 'Tài xế container',
                 'department' => 'Đội xe',
+                'date_of_birth' => now()->subYears(36)->toDateString(),
                 'theme_color' => '#334155',
                 'is_dark_mode' => true,
             ],
@@ -189,13 +196,13 @@ class DatabaseSeeder extends Seeder
     private function seedLocations(): array
     {
         $locations = [
-            ['location_name' => 'Cảng Cát Lái', 'type' => 'port', 'address' => '1295B Nguyễn Thị Định, Thủ Đức', 'province' => 'TP. Hồ Chí Minh'],
-            ['location_name' => 'ICD Sóng Thần', 'type' => 'depot', 'address' => 'Đường số 10, KCN Sóng Thần 1, Dĩ An', 'province' => 'Bình Dương'],
-            ['location_name' => 'Kho An Phát Quận 7', 'type' => 'warehouse', 'address' => '12 Nguyễn Văn Linh, Quận 7', 'province' => 'TP. Hồ Chí Minh'],
-            ['location_name' => 'Nhà máy Thép Nam Việt', 'type' => 'factory', 'address' => 'KCN Sóng Thần 2, Dĩ An', 'province' => 'Bình Dương'],
-            ['location_name' => 'Kho Sao Mai Thủ Đức', 'type' => 'warehouse', 'address' => '45 Quốc lộ 1A, Thủ Đức', 'province' => 'TP. Hồ Chí Minh'],
-            ['location_name' => 'Cảng Cái Mép', 'type' => 'port', 'address' => 'Phú Mỹ, Tân Thành', 'province' => 'Bà Rịa - Vũng Tàu'],
-            ['location_name' => 'Điểm giao Mekong Cần Thơ', 'type' => 'other', 'address' => '88 Nguyễn Trãi, Ninh Kiều', 'province' => 'Cần Thơ'],
+            ['location_code' => 'PORT-001', 'location_name' => 'Cảng Cát Lái', 'type' => 'port', 'address' => '1295B Nguyễn Thị Định, Thủ Đức', 'province' => 'Hải Phòng', 'status' => 'active', 'note' => null],
+            ['location_code' => 'DEPOT-001', 'location_name' => 'ICD Sóng Thần', 'type' => 'depot', 'address' => 'Đường số 10, KCN Sóng Thần 1, Dĩ An', 'province' => 'Hải Dương', 'status' => 'active', 'note' => null],
+            ['location_code' => 'WH-001', 'location_name' => 'Kho An Phát Quận 7', 'type' => 'warehouse', 'address' => '12 Nguyễn Văn Linh, Quận 7', 'province' => 'Hải Phòng', 'status' => 'active', 'note' => null],
+            ['location_code' => 'FACTORY-001', 'location_name' => 'Nhà máy Thép Nam Việt', 'type' => 'factory', 'address' => 'KCN Sóng Thần 2, Dĩ An', 'province' => 'Hưng Yên', 'status' => 'active', 'note' => null],
+            ['location_code' => 'WH-002', 'location_name' => 'Kho Sao Mai Thủ Đức', 'type' => 'warehouse', 'address' => '45 Quốc lộ 1A, Thủ Đức', 'province' => 'Thái Bình', 'status' => 'active', 'note' => null],
+            ['location_code' => 'PORT-002', 'location_name' => 'Cảng Cái Mép', 'type' => 'port', 'address' => 'Phú Mỹ, Tân Thành', 'province' => 'Quảng Ninh', 'status' => 'active', 'note' => null],
+            ['location_code' => 'LOC-001', 'location_name' => 'Điểm giao Mekong Cần Thơ', 'type' => 'other', 'address' => '88 Nguyễn Trãi, Ninh Kiều', 'province' => 'Nam Định', 'status' => 'active', 'note' => null],
         ];
 
         return collect($locations)
@@ -230,11 +237,11 @@ class DatabaseSeeder extends Seeder
     {
         $driverPrefix = 'TX-'.now()->format('ym').'-';
         $drivers = [
-            ['user_id' => $users['DRIVER']->id, 'full_name' => 'Bùi Văn Hùng', 'phone' => '0911001001', 'license_number' => 'GPLX-B2-000001', 'status' => 'active', 'start_date' => now()->subYears(4)->toDateString(), 'rank' => 'Tài xế chính', 'contract_expiry' => now()->addYear()->toDateString(), 'note' => 'Chuyên tuyến cảng - kho nội địa.'],
-            ['user_id' => null, 'full_name' => 'Ngô Thành Phúc', 'phone' => '0911001002', 'license_number' => 'GPLX-C-000002', 'status' => 'active', 'start_date' => now()->subYears(3)->toDateString(), 'rank' => 'Tài xế container', 'contract_expiry' => now()->addMonths(10)->toDateString(), 'note' => 'Ưu tiên tuyến Bình Dương và Đồng Nai.'],
-            ['user_id' => null, 'full_name' => 'Trịnh Anh Tuấn', 'phone' => '0911001003', 'license_number' => 'GPLX-FC-000003', 'status' => 'active', 'start_date' => now()->subYears(2)->toDateString(), 'rank' => 'Tài xế đường dài', 'contract_expiry' => now()->addMonths(18)->toDateString(), 'note' => 'Có kinh nghiệm chạy hàng lạnh.'],
-            ['user_id' => null, 'full_name' => 'Đỗ Minh Khoa', 'phone' => '0911001004', 'license_number' => 'GPLX-C-000004', 'status' => 'inactive', 'start_date' => now()->subYear()->toDateString(), 'rank' => 'Tài xế dự phòng', 'contract_expiry' => now()->addMonths(4)->toDateString(), 'note' => 'Tạm nghỉ theo lịch cá nhân.'],
-            ['user_id' => null, 'full_name' => 'Lâm Quốc Việt', 'phone' => '0911001005', 'license_number' => 'GPLX-FC-000005', 'status' => 'active', 'start_date' => now()->subMonths(15)->toDateString(), 'rank' => 'Tài xế container', 'contract_expiry' => now()->addMonths(12)->toDateString(), 'note' => 'Thông thạo tuyến Cái Mép - TP.HCM.'],
+            ['user_id' => $users['DRIVER']->id, 'full_name' => 'Bùi Văn Hùng', 'phone' => '0911001001', 'date_of_birth' => now()->subYears(36)->toDateString(), 'license_number' => 'GPLX-B2-000001', 'status' => 'active', 'start_date' => now()->subYears(4)->toDateString(), 'rank' => 'Tài xế chính', 'contract_expiry' => now()->addYear()->toDateString(), 'note' => 'Chuyên tuyến cảng - kho nội địa.'],
+            ['user_id' => null, 'full_name' => 'Ngô Thành Phúc', 'phone' => '0911001002', 'date_of_birth' => now()->subYears(35)->toDateString(), 'license_number' => 'GPLX-C-000002', 'status' => 'active', 'start_date' => now()->subYears(3)->toDateString(), 'rank' => 'Tài xế container', 'contract_expiry' => now()->addMonths(10)->toDateString(), 'note' => 'Ưu tiên tuyến Bình Dương và Đồng Nai.'],
+            ['user_id' => null, 'full_name' => 'Trịnh Anh Tuấn', 'phone' => '0911001003', 'date_of_birth' => now()->subYears(33)->toDateString(), 'license_number' => 'GPLX-FC-000003', 'status' => 'active', 'start_date' => now()->subYears(2)->toDateString(), 'rank' => 'Tài xế đường dài', 'contract_expiry' => now()->addMonths(18)->toDateString(), 'note' => 'Có kinh nghiệm chạy hàng lạnh.'],
+            ['user_id' => null, 'full_name' => 'Đỗ Minh Khoa', 'phone' => '0911001004', 'date_of_birth' => now()->subYears(31)->toDateString(), 'license_number' => 'GPLX-C-000004', 'status' => 'inactive', 'start_date' => now()->subYear()->toDateString(), 'rank' => 'Tài xế dự phòng', 'contract_expiry' => now()->addMonths(4)->toDateString(), 'note' => 'Tạm nghỉ theo lịch cá nhân.'],
+            ['user_id' => null, 'full_name' => 'Lâm Quốc Việt', 'phone' => '0911001005', 'date_of_birth' => now()->subYears(37)->toDateString(), 'license_number' => 'GPLX-FC-000005', 'status' => 'active', 'start_date' => now()->subMonths(15)->toDateString(), 'rank' => 'Tài xế container', 'contract_expiry' => now()->addMonths(12)->toDateString(), 'note' => 'Thông thạo tuyến Cái Mép - TP.HCM.'],
         ];
 
         return collect($drivers)
@@ -272,6 +279,9 @@ class DatabaseSeeder extends Seeder
             ['key' => 'company.name', 'value' => 'Example Logistics', 'group' => 'company', 'description' => 'Tên doanh nghiệp hiển thị trên chứng từ.'],
             ['key' => 'company.tax_code', 'value' => '0312345678', 'group' => 'company', 'description' => 'Mã số thuế doanh nghiệp.'],
             ['key' => 'company.address', 'value' => 'TP. Hồ Chí Minh', 'group' => 'company', 'description' => 'Địa chỉ doanh nghiệp.'],
+            ['key' => 'company.email', 'value' => 'contact@nguyentam-logistics.example', 'group' => 'company', 'description' => 'Email liên hệ công ty.'],
+            ['key' => 'company.phone', 'value' => '0900000000', 'group' => 'company', 'description' => 'Số điện thoại liên hệ công ty.'],
+            ['key' => 'company.contact_person', 'value' => 'Bộ phận điều vận', 'group' => 'company', 'description' => 'Người/bộ phận tiếp nhận liên hệ.'],
             ['key' => 'operation.default_currency', 'value' => 'VND', 'group' => 'operation', 'description' => 'Đơn vị tiền tệ mặc định.'],
         ];
 
@@ -317,9 +327,9 @@ class DatabaseSeeder extends Seeder
     {
         $orderPrefix = 'DO-'.now()->format('ymd').'-';
         $orders = [
-            ['shipping_job_id' => $shippingJobs[0]->id, 'vehicle_id' => $vehicles[0]->id, 'driver_id' => $drivers[0]->id, 'dispatch_status' => 'completed', 'note' => 'Đã hoàn tất giao hàng và nhận biên bản.', 'start_location_id' => $shippingJobs[0]->pickup_location_id, 'end_location_id' => $shippingJobs[0]->delivery_location_id, 'loading_percent' => 100, 'current_latitude' => 10.7281000, 'current_longitude' => 106.7214000, 'start_time' => now()->subDays(2)->setTime(8, 30), 'end_time' => now()->subDays(2)->setTime(15, 45), 'fuel_quota' => 52.5, 'toll_quota' => 650000, 'created_by' => $users['DISPATCH']->id],
-            ['shipping_job_id' => $shippingJobs[1]->id, 'vehicle_id' => $vehicles[3]->id, 'driver_id' => $drivers[1]->id, 'dispatch_status' => 'on_way', 'note' => 'Xe đã rời ICD, đang về nhà máy.', 'start_location_id' => $shippingJobs[1]->pickup_location_id, 'end_location_id' => $shippingJobs[1]->delivery_location_id, 'loading_percent' => 65, 'current_latitude' => 10.9092000, 'current_longitude' => 106.7429000, 'start_time' => now()->subHours(4), 'end_time' => null, 'fuel_quota' => 46.0, 'toll_quota' => 520000, 'created_by' => $users['DISPATCH']->id],
-            ['shipping_job_id' => $shippingJobs[2]->id, 'vehicle_id' => $vehicles[1]->id, 'driver_id' => $drivers[2]->id, 'dispatch_status' => 'dispatched', 'note' => 'Đã phân xe, chờ xác nhận lấy cont.', 'start_location_id' => $shippingJobs[2]->pickup_location_id, 'end_location_id' => $shippingJobs[2]->delivery_location_id, 'loading_percent' => 15, 'current_latitude' => 10.7702000, 'current_longitude' => 106.7850000, 'start_time' => now()->subHour(), 'end_time' => null, 'fuel_quota' => 38.0, 'toll_quota' => 430000, 'created_by' => $users['DISPATCH']->id],
+            ['shipping_job_id' => $shippingJobs[0]->id, 'vehicle_id' => $vehicles[0]->id, 'trailer_id' => $vehicles[1]->id, 'driver_id' => $drivers[0]->id, 'dispatch_status' => 'completed', 'approval_status' => 'approved', 'approved_by' => $users['ACCOUNTANT']->id, 'approved_at' => now()->subDays(2), 'note' => 'Đã hoàn tất giao hàng và nhận biên bản.', 'start_location_id' => $shippingJobs[0]->pickup_location_id, 'end_location_id' => $shippingJobs[0]->delivery_location_id, 'planned_departure_date' => now()->subDays(2)->toDateString(), 'planned_return_date' => now()->subDays(2)->toDateString(), 'loading_percent' => 100, 'current_latitude' => 10.7281000, 'current_longitude' => 106.7214000, 'start_time' => now()->subDays(2)->setTime(8, 30), 'end_time' => now()->subDays(2)->setTime(15, 45), 'fuel_quota' => 52.5, 'fuel_price_quota' => 22000, 'actual_fuel_liters' => 50.2, 'toll_quota' => 650000, 'created_by' => $users['DISPATCH']->id],
+            ['shipping_job_id' => $shippingJobs[1]->id, 'vehicle_id' => $vehicles[3]->id, 'trailer_id' => $vehicles[1]->id, 'driver_id' => $drivers[1]->id, 'dispatch_status' => 'on_way', 'approval_status' => 'approved', 'approved_by' => $users['ACCOUNTANT']->id, 'approved_at' => now()->subHours(6), 'note' => 'Xe đã rời ICD, đang về nhà máy.', 'start_location_id' => $shippingJobs[1]->pickup_location_id, 'end_location_id' => $shippingJobs[1]->delivery_location_id, 'planned_departure_date' => now()->toDateString(), 'planned_return_date' => now()->addDay()->toDateString(), 'loading_percent' => 65, 'current_latitude' => 10.9092000, 'current_longitude' => 106.7429000, 'start_time' => now()->subHours(4), 'end_time' => null, 'fuel_quota' => 46.0, 'fuel_price_quota' => 22000, 'actual_fuel_liters' => null, 'toll_quota' => 520000, 'created_by' => $users['DISPATCH']->id],
+            ['shipping_job_id' => $shippingJobs[2]->id, 'vehicle_id' => $vehicles[1]->id, 'trailer_id' => $vehicles[5]->id, 'driver_id' => $drivers[2]->id, 'dispatch_status' => 'dispatched', 'approval_status' => 'pending', 'note' => 'Đã phân xe, chờ kế toán duyệt.', 'start_location_id' => $shippingJobs[2]->pickup_location_id, 'end_location_id' => $shippingJobs[2]->delivery_location_id, 'planned_departure_date' => now()->addDay()->toDateString(), 'planned_return_date' => now()->addDays(2)->toDateString(), 'loading_percent' => 15, 'current_latitude' => 10.7702000, 'current_longitude' => 106.7850000, 'start_time' => now()->subHour(), 'end_time' => null, 'fuel_quota' => 38.0, 'fuel_price_quota' => 22000, 'actual_fuel_liters' => null, 'toll_quota' => 430000, 'created_by' => $users['DISPATCH']->id],
         ];
 
         return collect($orders)
@@ -338,11 +348,11 @@ class DatabaseSeeder extends Seeder
     private function seedDocuments(array $shippingJobs, array $users): array
     {
         $documents = [
-            ['shipping_job_id' => $shippingJobs[0]->id, 'doc_category' => 'Tờ khai hải quan', 'document_flow' => 'input', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-001/to-khai.pdf', 'uploaded_by' => $users['DOCUMENT']->id, 'status' => 'active', 'note' => 'Bản scan tờ khai trước thuế.'],
-            ['shipping_job_id' => $shippingJobs[0]->id, 'doc_category' => 'Biên bản giao nhận', 'document_flow' => 'output', 'tax_stage' => 'after_tax', 'file_url' => 'documents/seed/job-001/bien-ban-giao-nhan.pdf', 'uploaded_by' => $users['FIELD']->id, 'status' => 'active', 'note' => 'Đã có chữ ký khách hàng.'],
-            ['shipping_job_id' => $shippingJobs[1]->id, 'doc_category' => 'Phiếu nâng hạ', 'document_flow' => 'input', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-002/phieu-nang-ha.pdf', 'uploaded_by' => $users['DOCUMENT']->id, 'status' => 'pending', 'note' => 'Chờ bổ sung bản gốc.'],
-            ['shipping_job_id' => $shippingJobs[2]->id, 'doc_category' => 'Hóa đơn đầu vào', 'document_flow' => 'input', 'tax_stage' => 'after_tax', 'file_url' => 'documents/seed/job-003/hoa-don-dau-vao.pdf', 'uploaded_by' => $users['ACCOUNTANT']->id, 'status' => 'active', 'note' => 'Phục vụ đối chiếu chi phí.'],
-            ['shipping_job_id' => $shippingJobs[3]->id, 'doc_category' => 'Booking note', 'document_flow' => 'output', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-004/booking-note.pdf', 'uploaded_by' => $users['SALES']->id, 'status' => 'active', 'note' => 'Booking xuất cảng.'],
+            ['document_code' => 'DOC-TO-KHAI-'.now()->format('ym').'-001', 'shipping_job_id' => $shippingJobs[0]->id, 'doc_category' => 'Tờ khai hải quan', 'document_flow' => 'input', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-001/to-khai.pdf', 'uploaded_by' => $users['DOCUMENT']->id, 'status' => 'active', 'note' => 'Bản scan tờ khai trước thuế.'],
+            ['document_code' => 'DOC-BIEN-BAN-'.now()->format('ym').'-001', 'shipping_job_id' => $shippingJobs[0]->id, 'doc_category' => 'Biên bản giao nhận', 'document_flow' => 'output', 'tax_stage' => 'after_tax', 'file_url' => 'documents/seed/job-001/bien-ban-giao-nhan.pdf', 'uploaded_by' => $users['FIELD']->id, 'status' => 'active', 'note' => 'Đã có chữ ký khách hàng.'],
+            ['document_code' => 'DOC-PHIEU-NANG-'.now()->format('ym').'-001', 'shipping_job_id' => $shippingJobs[1]->id, 'doc_category' => 'Phiếu nâng hạ', 'document_flow' => 'input', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-002/phieu-nang-ha.pdf', 'uploaded_by' => $users['DOCUMENT']->id, 'status' => 'pending', 'note' => 'Chờ bổ sung bản gốc.'],
+            ['document_code' => 'DOC-HOA-DON-'.now()->format('ym').'-001', 'shipping_job_id' => $shippingJobs[2]->id, 'doc_category' => 'Hóa đơn đầu vào', 'document_flow' => 'input', 'tax_stage' => 'after_tax', 'file_url' => 'documents/seed/job-003/hoa-don-dau-vao.pdf', 'uploaded_by' => $users['ACCOUNTANT']->id, 'status' => 'active', 'note' => 'Phục vụ đối chiếu chi phí.'],
+            ['document_code' => 'DOC-BOOKING-'.now()->format('ym').'-001', 'shipping_job_id' => $shippingJobs[3]->id, 'doc_category' => 'Booking note', 'document_flow' => 'output', 'tax_stage' => 'before_tax', 'file_url' => 'documents/seed/job-004/booking-note.pdf', 'uploaded_by' => $users['SALES']->id, 'status' => 'active', 'note' => 'Booking xuất cảng.'],
         ];
 
         return collect($documents)

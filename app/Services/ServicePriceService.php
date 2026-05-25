@@ -23,12 +23,18 @@ class ServicePriceService
             $query->where('is_tax_included', (bool) $filters['is_tax_included']);
         }
 
+        foreach (['package_code', 'service_name', 'unit'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
         return $query->latest()->paginate($perPage);
     }
 
     public function create(array $data)
     {
-        $data['package_code'] = $data['package_code'] ?? $this->generatePackageCode();
+        $data['package_code'] = $this->generatePackageCode();
         $data['is_tax_included'] = (bool) ($data['is_tax_included'] ?? false);
 
         return ServicePrice::create($data);
@@ -37,6 +43,7 @@ class ServicePriceService
     public function update(ServicePrice $servicePrice, array $data)
     {
         $data['is_tax_included'] = (bool) ($data['is_tax_included'] ?? false);
+        unset($data['package_code']);
         $servicePrice->update($data);
 
         return $servicePrice;

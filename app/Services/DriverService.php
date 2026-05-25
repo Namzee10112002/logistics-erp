@@ -29,6 +29,12 @@ class DriverService
             $query->where('rank', $filters['rank']);
         }
 
+        foreach (['driver_code', 'full_name', 'phone', 'license_number'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
         return $query->latest()->paginate($perPage);
     }
 

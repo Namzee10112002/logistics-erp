@@ -37,6 +37,7 @@ class FieldStaffSeeder extends Seeder
                     'employee_code' => 'NV-'.now()->format('ym').'-006',
                     'position' => 'Nhân viên hiện trường',
                     'department' => 'Hiện trường',
+                    'date_of_birth' => now()->subYears(28)->toDateString(),
                     'joined_at' => now()->subMonths(13)->toDateString(),
                     'theme_color' => '#166534',
                     'is_dark_mode' => false,
@@ -54,6 +55,7 @@ class FieldStaffSeeder extends Seeder
                     'employee_code' => 'NV-'.now()->format('ym').'-008',
                     'position' => 'Giám sát kho',
                     'department' => 'Hiện trường',
+                    'date_of_birth' => now()->subYears(31)->toDateString(),
                     'joined_at' => now()->subMonths(9)->toDateString(),
                     'theme_color' => '#166534',
                     'is_dark_mode' => false,
@@ -71,6 +73,7 @@ class FieldStaffSeeder extends Seeder
                     'employee_code' => 'NV-'.now()->format('ym').'-009',
                     'position' => 'Điều phối bãi',
                     'department' => 'Hiện trường',
+                    'date_of_birth' => now()->subYears(29)->toDateString(),
                     'joined_at' => now()->subMonths(6)->toDateString(),
                     'theme_color' => '#166534',
                     'is_dark_mode' => false,
@@ -84,6 +87,7 @@ class FieldStaffSeeder extends Seeder
                 'user_id' => $users[0]->id,
                 'full_name' => $users[0]->name,
                 'phone' => '0922001001',
+                'date_of_birth' => now()->subYears(28)->toDateString(),
                 'certificates' => 'Chứng chỉ an toàn kho bãi; Chứng chỉ nghiệp vụ hải quan cơ bản',
                 'responsible_location_id' => $locations[0]->id,
                 'start_date' => now()->subMonths(13)->toDateString(),
@@ -95,6 +99,7 @@ class FieldStaffSeeder extends Seeder
                 'user_id' => $users[1]->id,
                 'full_name' => $users[1]->name,
                 'phone' => '0922001002',
+                'date_of_birth' => now()->subYears(31)->toDateString(),
                 'certificates' => 'Chứng chỉ PCCC cơ bản; Chứng chỉ vận hành kho',
                 'responsible_location_id' => $locations[1]->id,
                 'start_date' => now()->subMonths(9)->toDateString(),
@@ -106,6 +111,7 @@ class FieldStaffSeeder extends Seeder
                 'user_id' => $users[2]->id,
                 'full_name' => $users[2]->name,
                 'phone' => '0922001003',
+                'date_of_birth' => now()->subYears(29)->toDateString(),
                 'certificates' => 'Chứng chỉ an toàn bãi container',
                 'responsible_location_id' => $locations[2]->id,
                 'start_date' => now()->subMonths(6)->toDateString(),
@@ -137,9 +143,9 @@ class FieldStaffSeeder extends Seeder
         }
 
         $fallbackLocations = [
-            ['location_name' => 'Kho Hiện Trường Trung Tâm', 'type' => 'warehouse', 'address' => 'Khu logistics trung tâm', 'province' => 'TP. Hồ Chí Minh'],
-            ['location_name' => 'Bãi Điều Phối Đông Nam', 'type' => 'depot', 'address' => 'Khu bãi điều phối Đông Nam', 'province' => 'Bình Dương'],
-            ['location_name' => 'Kho Trung Chuyển Cái Mép', 'type' => 'warehouse', 'address' => 'Khu cảng Cái Mép', 'province' => 'Bà Rịa - Vũng Tàu'],
+            ['location_code' => 'WH-901', 'location_name' => 'Kho Hiện Trường Trung Tâm', 'type' => 'warehouse', 'address' => 'Khu logistics trung tâm', 'province' => 'Hải Phòng', 'status' => 'active'],
+            ['location_code' => 'DEPOT-901', 'location_name' => 'Bãi Điều Phối Đông Nam', 'type' => 'depot', 'address' => 'Khu bãi điều phối Đông Nam', 'province' => 'Hải Dương', 'status' => 'active'],
+            ['location_code' => 'WH-902', 'location_name' => 'Kho Trung Chuyển Cái Mép', 'type' => 'warehouse', 'address' => 'Khu cảng Cái Mép', 'province' => 'Quảng Ninh', 'status' => 'active'],
         ];
 
         foreach ($fallbackLocations as $fallbackLocation) {

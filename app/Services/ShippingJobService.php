@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ShippingJobService
 {
-    public function getAll(array $filters = [])
+    public function getAll(array $filters = [], int $perPage = 10)
     {
         $query = ShippingJob::with(['customer', 'pickupLocation', 'deliveryLocation', 'creator'])
             ->withCount(['dispatchOrders', 'documents', 'expenses'])
@@ -42,6 +42,12 @@ class ShippingJobService
             $query->where('customer_id', $filters['customer_id']);
         }
 
+        foreach (['job_code', 'container_number', 'customs_declaration_no', 'cargo_type', 'container_type'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
         if (! empty($filters['date_from'])) {
             $query->whereDate('expected_date', '>=', $filters['date_from']);
         }
@@ -50,7 +56,7 @@ class ShippingJobService
             $query->whereDate('expected_date', '<=', $filters['date_to']);
         }
 
-        return $query->paginate(10);
+        return $query->paginate($perPage);
     }
 
     public function create(array $data): ShippingJob

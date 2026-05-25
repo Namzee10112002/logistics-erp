@@ -32,6 +32,12 @@ class FieldStaffService
             $query->where('responsible_location_id', $filters['responsible_location_id']);
         }
 
+        foreach (['staff_code', 'full_name', 'phone', 'certificates'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
         return $query->latest()->paginate($perPage);
     }
 

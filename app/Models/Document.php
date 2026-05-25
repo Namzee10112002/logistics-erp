@@ -14,6 +14,7 @@ class Document extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'document_code',
         'shipping_job_id',
         'doc_category',
         'document_flow',
@@ -37,5 +38,10 @@ class Document extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    public function isInternalDispatchOrder(): bool
+    {
+        return str_starts_with($this->file_url, 'internal://dispatch-order/');
     }
 }

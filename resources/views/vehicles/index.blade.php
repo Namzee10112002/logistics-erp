@@ -8,14 +8,8 @@
     <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#vehicleModal" onclick="prepareAdd()">
         <i class="fa fa-plus me-2"></i> THÊM XE MỚI
     </button>
+    <x-export-buttons />
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('vehicles.index') }}" method="GET" class="row g-3">
@@ -32,6 +26,23 @@
         </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+        <div class="col-md-3"><input type="text" name="plate_number" class="form-control border-light" placeholder="Biển số" value="{{ request('plate_number') }}"></div>
+        <div class="col-md-3">
+            <select name="vehicle_type" class="form-select border-light">
+                <option value="">Loại xe</option>
+                @foreach(\App\Support\LogisticsOptions::vehicleTypes() as $value => $label)
+                    <option value="{{ $value }}" {{ request('vehicle_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="payload" class="form-select border-light">
+                <option value="">Tải trọng</option>
+                @foreach(\App\Support\LogisticsOptions::payloads() as $value => $label)
+                    <option value="{{ $value }}" {{ request('payload') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
         </div>
     </form>
 </div>
@@ -139,11 +150,19 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Loại Xe</label>
-                            <input type="text" name="vehicle_type" id="vehicle_type" class="form-control bg-light border-0" placeholder="VD: Xe tải 5 tấn, Container..." required>
+                            <select name="vehicle_type" id="vehicle_type" class="form-select bg-light border-0" required>
+                                @foreach(\App\Support\LogisticsOptions::vehicleTypes() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tải Trọng (Tấn)</label>
-                            <input type="number" step="0.1" name="payload" id="payload" class="form-control bg-light border-0" required>
+                            <select name="payload" id="payload" class="form-select bg-light border-0" required>
+                                @foreach(\App\Support\LogisticsOptions::payloads() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Trạng Thái</label>

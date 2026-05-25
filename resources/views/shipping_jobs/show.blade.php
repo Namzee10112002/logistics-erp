@@ -344,7 +344,7 @@
                     </li>
                     <li>
                         <label class="small text-muted d-block">Thời gian tạo:</label>
-                        <span class="fw-bold">{{ $shippingJob->created_at->format('d/m/Y H:i:s') }}</span>
+                        <span class="fw-bold">{{ $shippingJob->created_at->format('d/m/Y') }}</span>
                     </li>
                 </ul>
             </div>

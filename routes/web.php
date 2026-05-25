@@ -9,6 +9,7 @@ use App\Http\Controllers\DispatchOrderController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\FieldAssignmentController;
 use App\Http\Controllers\FieldStaffController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PaymentController;
@@ -95,8 +96,15 @@ Route::middleware('auth')->group(function () {
 
     // Dispatch Orders
     // ADMIN and DISPATCH can do everything
+    Route::middleware('role:ADMIN,DISPATCH,FIELD')->group(function () {
+        Route::get('field-assignments', [FieldAssignmentController::class, 'index'])->name('field-assignments.index');
+        Route::patch('field-assignments/{fieldAssignment}/status', [FieldAssignmentController::class, 'updateStatus'])->name('field-assignments.update-status');
+    });
+
     Route::middleware('role:ADMIN,DISPATCH')->group(function () {
         Route::resource('dispatch-orders', DispatchOrderController::class)->only(['create', 'store', 'destroy']);
+        Route::get('field-assignments/create', [FieldAssignmentController::class, 'create'])->name('field-assignments.create');
+        Route::post('field-assignments', [FieldAssignmentController::class, 'store'])->name('field-assignments.store');
     });
 
     // DRIVER, ADMIN, DISPATCH can view and update status
@@ -106,9 +114,15 @@ Route::middleware('auth')->group(function () {
         Route::patch('/dispatch-orders/{dispatch_order}/status', [DispatchOrderController::class, 'updateStatus'])->name('dispatch-orders.update-status');
     });
 
+    Route::middleware('role:ADMIN,ACCOUNTANT')->group(function () {
+        Route::post('/dispatch-orders/{dispatch_order}/approve', [DispatchOrderController::class, 'approve'])->name('dispatch-orders.approve');
+        Route::post('/dispatch-orders/{dispatch_order}/reject', [DispatchOrderController::class, 'reject'])->name('dispatch-orders.reject');
+    });
+
     // Expenses & Documents (DRIVER cannot add)
     Route::middleware('role:ADMIN,ACCOUNTANT,SALES,DISPATCH,FIELD,DOCUMENT')->group(function () {
         Route::get('documents', [DocumentController::class, 'index'])->name('documents.index');
+        Route::get('documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
         Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
         Route::post('documents', [DocumentController::class, 'store'])->name('documents.store');
     });

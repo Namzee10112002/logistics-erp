@@ -8,6 +8,7 @@
     <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#fieldStaffModal" onclick="prepareAdd()">
         <i class="fa fa-plus me-2"></i> THÊM NHÂN VIÊN
     </button>
+    <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
@@ -35,6 +36,9 @@
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
+        <div class="col-md-3"><input type="text" name="staff_code" class="form-control border-light" placeholder="Mã" value="{{ request('staff_code') }}"></div>
+        <div class="col-md-3"><input type="text" name="full_name" class="form-control border-light" placeholder="Họ tên" value="{{ request('full_name') }}"></div>
+        <div class="col-md-3"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
     </form>
 </div>
 
@@ -44,7 +48,7 @@
             <thead class="bg-light">
                 <tr class="small text-muted text-uppercase">
                     <th class="ps-4">Mã / Họ và tên</th>
-                    <th>Tài khoản</th>
+                    <th>SĐT / Ngày sinh</th>
                     <th>Khu vực phụ trách</th>
                     <th>Chứng chỉ</th>
                     <th>Trạng thái</th>
@@ -65,12 +69,8 @@
                             </div>
                         </td>
                         <td>
-                            @if($staff->user)
-                                <div class="fw-semibold">{{ $staff->user->username }}</div>
-                                <div class="small text-muted">{{ $staff->user->email }}</div>
-                            @else
-                                <span class="text-muted small">Chưa liên kết</span>
-                            @endif
+                            <div class="fw-semibold">{{ $staff->phone ?: '---' }}</div>
+                            <div class="small text-muted">{{ $staff->date_of_birth?->format('d/m/Y') ?? '---' }}</div>
                         </td>
                         <td>
                             @if($staff->responsibleLocation)
@@ -133,7 +133,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Số điện thoại</label>
-                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0">
+                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Ngày sinh</label>
+                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tài khoản liên kết</label>
@@ -205,6 +209,7 @@
 
         document.getElementById('full_name').value = staff.full_name;
         document.getElementById('phone').value = staff.phone || '';
+        document.getElementById('date_of_birth').value = dateOnly(staff.date_of_birth);
         document.getElementById('user_id').value = staff.user_id || '';
         document.getElementById('responsible_location_id').value = staff.responsible_location_id || '';
         document.getElementById('start_date').value = dateOnly(staff.start_date);

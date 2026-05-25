@@ -73,6 +73,9 @@
                             <div>
                                 <div class="fw-bold text-navy fs-5">{{ $dispatchOrder->vehicle->plate_number }}</div>
                                 <div class="small text-muted">{{ $dispatchOrder->vehicle->vehicle_type }} - {{ $dispatchOrder->vehicle->payload }} Tấn</div>
+                                @if($dispatchOrder->trailer)
+                                    <div class="small text-muted">Mooc: {{ $dispatchOrder->trailer->plate_number }}</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -86,6 +89,23 @@
                             <div class="col-md-6">
                                 <label class="small text-muted text-uppercase fw-bold">Địa điểm kết thúc</label>
                                 <div class="fw-bold text-navy">{{ $dispatchOrder->endLocation->location_name ?? $dispatchOrder->shippingJob->deliveryLocation->location_name }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="small text-muted text-uppercase fw-bold">Ngày đi</label>
+                                <div class="fw-bold text-navy">{{ $dispatchOrder->planned_departure_date?->format('d/m/Y') ?? '---' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-muted text-uppercase fw-bold">Ngày về</label>
+                                <div class="fw-bold text-navy">{{ $dispatchOrder->planned_return_date?->format('d/m/Y') ?? '---' }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-muted text-uppercase fw-bold">Dầu thực tế</label>
+                                <div class="fw-bold text-navy">{{ $dispatchOrder->actual_fuel_liters ? number_format($dispatchOrder->actual_fuel_liters, 1) . ' lít' : '---' }}</div>
                             </div>
                         </div>
                     </div>
@@ -137,7 +157,9 @@
                                 <div class="fw-bold text-navy">
                                     @php
                                         $statusText = match($log->status_update) {
-                                            'dispatched' => 'Đã điều xe (Lập lệnh)',
+                                            'pending_approval' => 'Lập lệnh và gửi kế toán duyệt',
+                                            'approved' => 'Kế toán đã duyệt lệnh',
+                                            'dispatched' => 'Đã điều xe',
                                             'on_way' => 'Bắt đầu khởi hành',
                                             'completed' => 'Hoàn thành chuyến xe',
                                             default => $log->status_update
@@ -146,7 +168,7 @@
                                     {{ $statusText }}
                                 </div>
                                 <div class="small text-muted">
-                                    {{ $log->created_at->format('d/m/Y H:i:s') }} 
+                                    {{ $log->created_at->format('d/m/Y') }}
                                     <span class="mx-1">•</span> 
                                     Cập nhật bởi: {{ $log->updater->name }}
                                 </div>
@@ -210,24 +232,61 @@
                 <div class="mb-3">
                     <label class="small text-muted d-block">Trạng thái hiện tại:</label>
                     @php
-                        $statusClass = match($dispatchOrder->dispatch_status) {
-                            'dispatched' => 'bg-info text-dark',
-                            'on_way' => 'bg-warning text-dark',
-                            'completed' => 'bg-success',
-                            default => 'bg-light text-dark'
+                        $statusName = match(true) {
+                            $dispatchOrder->approval_status === 'pending' => 'Chờ duyệt',
+                            $dispatchOrder->approval_status === 'rejected' => 'Từ chối',
+                            $dispatchOrder->dispatch_status === 'on_way' => 'Đang đi',
+                            $dispatchOrder->dispatch_status === 'completed' => 'Hoàn thành',
+                            default => 'Đã duyệt'
                         };
-                        $statusName = match($dispatchOrder->dispatch_status) {
-                            'dispatched' => 'Đã điều xe',
-                            'on_way' => 'Đang đi',
-                            'completed' => 'Hoàn thành',
-                            default => 'Khác'
+                        $statusClass = match(true) {
+                            $dispatchOrder->approval_status === 'pending' => 'bg-warning text-dark',
+                            $dispatchOrder->approval_status === 'rejected' => 'bg-danger',
+                            $dispatchOrder->dispatch_status === 'on_way' => 'bg-info text-dark',
+                            $dispatchOrder->dispatch_status === 'completed' => 'bg-success',
+                            default => 'bg-primary'
                         };
                     @endphp
                     <span class="badge {{ $statusClass }} fs-6">{{ $statusName }}</span>
                 </div>
 
+                <div class="mb-3">
+                    <label class="small text-muted d-block">Trạng thái duyệt:</label>
+                    @php
+                        $approvalClass = match($dispatchOrder->approval_status) {
+                            'approved' => 'bg-success',
+                            'rejected' => 'bg-danger',
+                            default => 'bg-warning text-dark'
+                        };
+                        $approvalName = match($dispatchOrder->approval_status) {
+                            'approved' => 'Đã duyệt',
+                            'rejected' => 'Từ chối',
+                            default => 'Chờ duyệt'
+                        };
+                    @endphp
+                    <span class="badge {{ $approvalClass }} fs-6">{{ $approvalName }}</span>
+                    @if($dispatchOrder->approver)
+                        <div class="small text-muted mt-1">Người duyệt: {{ $dispatchOrder->approver->name }}</div>
+                    @endif
+                </div>
+
+                @if(Auth::user()->hasRole(['ADMIN', 'ACCOUNTANT']) && $dispatchOrder->approval_status === 'pending')
+                    <div class="d-grid gap-2 mb-4">
+                        <form action="{{ route('dispatch-orders.approve', $dispatchOrder) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 fw-bold">Duyệt lệnh điều xe</button>
+                        </form>
+                        <form action="{{ route('dispatch-orders.reject', $dispatchOrder) }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="rejection_reason" value="Kế toán từ chối duyệt">
+                            <button type="submit" class="btn btn-outline-danger w-100 fw-bold">Từ chối</button>
+                        </form>
+                    </div>
+                @endif
+
                 <!-- Update Status Buttons for Drivers -->
                 <div class="mt-4 pt-3 border-top">
+                    @if($dispatchOrder->approval_status === 'approved')
                     <form action="{{ route('dispatch-orders.update-status', $dispatchOrder) }}" method="POST" class="mb-3">
                         @csrf
                         @method('PATCH')
@@ -245,12 +304,18 @@
                                 <input type="number" step="0.0000001" name="current_longitude" class="form-control form-control-sm" value="{{ $dispatchOrder->current_longitude }}" placeholder="Kinh độ">
                             </div>
                             <div class="col-12">
+                                <input type="number" step="0.1" name="actual_fuel_liters" class="form-control form-control-sm" value="{{ $dispatchOrder->actual_fuel_liters }}" placeholder="Tổng dầu thực tế (lít)">
+                            </div>
+                            <div class="col-12">
                                 <button type="submit" class="btn btn-sm btn-outline-navy w-100 fw-bold">Cập nhật tiến độ</button>
                             </div>
                         </div>
                     </form>
+                    @endif
 
-                    @if($dispatchOrder->dispatch_status === 'dispatched')
+                    @if($dispatchOrder->approval_status !== 'approved')
+                        <div class="alert alert-warning small mb-0">Lệnh điều xe đang chờ kế toán duyệt nên chưa thể cập nhật hành trình.</div>
+                    @elseif($dispatchOrder->dispatch_status === 'dispatched')
                         <form action="{{ route('dispatch-orders.update-status', $dispatchOrder) }}" method="POST">
                             @csrf
                             @method('PATCH')
@@ -277,15 +342,15 @@
 
                 <div class="mt-4">
                     <label class="small text-muted d-block">Thời gian bắt đầu:</label>
-                    <span class="fw-bold">{{ $dispatchOrder->start_time ? \Carbon\Carbon::parse($dispatchOrder->start_time)->format('d/m/Y H:i') : '---' }}</span>
+                    <span class="fw-bold">{{ $dispatchOrder->start_time ? \Carbon\Carbon::parse($dispatchOrder->start_time)->format('d/m/Y') : '---' }}</span>
                 </div>
                 <div class="mb-3">
                     <label class="small text-muted d-block">Thời gian kết thúc:</label>
-                    <span class="fw-bold">{{ $dispatchOrder->end_time ? \Carbon\Carbon::parse($dispatchOrder->end_time)->format('d/m/Y H:i') : '---' }}</span>
+                    <span class="fw-bold">{{ $dispatchOrder->end_time ? \Carbon\Carbon::parse($dispatchOrder->end_time)->format('d/m/Y') : '---' }}</span>
                 </div>
                 <div class="mb-3">
                     <label class="small text-muted d-block">Thời gian lập lệnh:</label>
-                    <span class="fw-bold">{{ $dispatchOrder->created_at->format('d/m/Y H:i') }}</span>
+                    <span class="fw-bold">{{ $dispatchOrder->created_at->format('d/m/Y') }}</span>
                 </div>
                 <div>
                     <label class="small text-muted d-block">Người lập:</label>

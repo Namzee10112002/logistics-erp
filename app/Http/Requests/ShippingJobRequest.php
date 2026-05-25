@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ShippingJobRequest extends FormRequest
 {
@@ -32,6 +34,25 @@ class ShippingJobRequest extends FormRequest
             'customs_declaration_no' => ['nullable', 'string', 'max:50'],
             'expected_date' => ['required', 'date'],
             'status' => ['nullable', 'in:new,processing,dispatched,completed,cancelled'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if (! $this->filled('expected_date')) {
+                    return;
+                }
+
+                $shippingJob = $this->route('shipping_job');
+                $createdDate = $shippingJob?->created_at?->copy()->startOfDay() ?? now()->startOfDay();
+                $expectedDate = Carbon::parse($this->input('expected_date'))->startOfDay();
+
+                if ($expectedDate->greaterThan($createdDate->copy()->addDays(10))) {
+                    $validator->errors()->add('expected_date', 'Ngày dự kiến không được vượt quá 10 ngày so với ngày tạo đơn hàng.');
+                }
+            },
         ];
     }
 }

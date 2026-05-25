@@ -13,10 +13,13 @@ class Location extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'location_code',
         'location_name',
         'type',
         'address',
         'province',
+        'status',
+        'note',
     ];
 
     public function pickupJobs(): HasMany

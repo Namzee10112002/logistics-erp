@@ -20,6 +20,7 @@ class FieldStaff extends Model
         'staff_code',
         'full_name',
         'phone',
+        'date_of_birth',
         'certificates',
         'responsible_location_id',
         'start_date',
@@ -41,6 +42,7 @@ class FieldStaff extends Model
     {
         return [
             'start_date' => 'date',
+            'date_of_birth' => 'date',
         ];
     }
 }

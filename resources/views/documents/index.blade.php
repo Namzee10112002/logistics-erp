@@ -8,6 +8,7 @@
         <h4 class="fw-bold mb-1">Quản lý Chứng từ</h4>
         <p class="text-muted small mb-0">Tra cứu chứng từ đầu vào/đầu ra, trước thuế/sau thuế theo từng đơn hàng.</p>
     </div>
+    <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
@@ -32,6 +33,21 @@
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
+        <div class="col-md-2">
+            <input type="text" name="document_code" class="form-control border-light" placeholder="Mã chứng từ" value="{{ request('document_code') }}">
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="doc_category" class="form-control border-light" placeholder="Loại chứng từ" value="{{ request('doc_category') }}">
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="job_code" class="form-control border-light" placeholder="Mã đơn hàng" value="{{ request('job_code') }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="customer_name" class="form-control border-light" placeholder="Khách hàng" value="{{ request('customer_name') }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="uploader_name" class="form-control border-light" placeholder="Người tải" value="{{ request('uploader_name') }}">
+        </div>
     </form>
 </div>
 
@@ -53,7 +69,8 @@
                     <tr>
                         <td class="ps-4">
                             <div class="fw-bold text-navy">{{ $document->doc_category }}</div>
-                            <div class="small text-muted">{{ $document->created_at->format('d/m/Y H:i') }}</div>
+                            <div class="small text-muted">{{ $document->document_code ?? '---' }}</div>
+                            <div class="small text-muted">{{ $document->created_at->format('d/m/Y') }}</div>
                         </td>
                         <td>
                             <a href="{{ route('shipping-jobs.show', $document->shipping_job_id) }}" class="fw-bold text-decoration-none text-navy">
@@ -73,7 +90,7 @@
                         </td>
                         <td>{{ $document->uploader->name ?? '---' }}</td>
                         <td class="text-center">
-                            <a href="{{ Storage::url($document->file_url) }}" target="_blank" class="btn btn-sm btn-outline-navy">
+                            <a href="{{ route('documents.show', $document) }}" target="_blank" class="btn btn-sm btn-outline-navy">
                                 <i class="fa fa-eye"></i>
                             </a>
                         </td>

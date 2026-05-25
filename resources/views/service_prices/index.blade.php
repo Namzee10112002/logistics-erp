@@ -8,14 +8,8 @@
     <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#priceModal" onclick="prepareAdd()">
         <i class="fa fa-plus me-2"></i> THÊM BIỂU GIÁ
     </button>
+    <x-export-buttons />
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('service-prices.index') }}" method="GET" class="row g-3">
@@ -31,6 +25,16 @@
         </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
+        </div>
+        <div class="col-md-3"><input type="text" name="package_code" class="form-control border-light" placeholder="Mã gói" value="{{ request('package_code') }}"></div>
+        <div class="col-md-3"><input type="text" name="service_name" class="form-control border-light" placeholder="Dịch vụ" value="{{ request('service_name') }}"></div>
+        <div class="col-md-3">
+            <select name="unit" class="form-select border-light">
+                <option value="">Đơn vị</option>
+                @foreach(\App\Support\LogisticsOptions::serviceUnits() as $value => $label)
+                    <option value="{{ $value }}" {{ request('unit') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
         </div>
     </form>
 </div>
@@ -104,7 +108,7 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Mã gói</label>
-                            <input type="text" name="package_code" id="package_code" class="form-control bg-light border-0" placeholder="Để trống để hệ thống tự sinh">
+                            <input type="text" id="package_code" class="form-control bg-light border-0" placeholder="Tự sinh khi lưu" disabled>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Tên Dịch Vụ</label>
@@ -112,7 +116,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Đơn Vị Tính</label>
-                            <input type="text" name="unit" id="unit" class="form-control bg-light border-0" placeholder="Chuyến, Cont, KG..." required>
+                            <select name="unit" id="unit" class="form-select bg-light border-0" required>
+                                @foreach(\App\Support\LogisticsOptions::serviceUnits() as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Đơn Giá (VNĐ)</label>

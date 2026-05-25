@@ -22,6 +22,16 @@ class VehicleService
             $query->where('status', $filters['status']);
         }
 
+        foreach (['plate_number', 'vehicle_type', 'note'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
+        if (! empty($filters['payload'])) {
+            $query->where('payload', $filters['payload']);
+        }
+
         return $query->latest()->paginate($perPage);
     }
 

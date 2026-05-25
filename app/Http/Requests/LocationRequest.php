@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Support\LogisticsOptions;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class LocationRequest extends FormRequest
 {
@@ -16,8 +18,10 @@ class LocationRequest extends FormRequest
         return [
             'location_name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string'],
-            'province' => ['required', 'string', 'max:100'],
+            'province' => ['required', Rule::in(array_keys(LogisticsOptions::provincesNearHaiPhong()))],
             'type' => ['required', 'in:depot,port,warehouse,factory,other'],
+            'status' => ['required', 'in:active,inactive,maintenance,overloaded'],
+            'note' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

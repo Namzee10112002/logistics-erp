@@ -35,8 +35,9 @@
             </div>
             <div class="col-md-5 d-flex gap-2">
                 <button type="submit" class="btn btn-navy flex-fill">Xem báo cáo</button>
-                <a href="{{ route('reports.operational', request()->query() + ['export' => 'excel']) }}" class="btn btn-outline-success">Excel</a>
-                <button type="button" onclick="window.print()" class="btn btn-outline-navy">PDF</button>
+                @foreach(['xlsx' => 'Excel', 'csv' => 'CSV', 'docx' => 'Word', 'pdf' => 'PDF'] as $format => $label)
+                    <a href="{{ route('reports.operational', request()->query() + ['export' => $format]) }}" class="btn btn-outline-navy">{{ $label }}</a>
+                @endforeach
             </div>
         </form>
     </div>
@@ -87,6 +88,42 @@
                             </li>
                         @endforeach
                     </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card border-0 rounded-4 shadow-sm">
+                <div class="card-header bg-white border-0 p-4 pb-0">
+                    <h6 class="fw-bold text-navy mb-0">Năng suất tài xế trong kỳ</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tài xế</th>
+                                    <th class="text-end">Số chuyến</th>
+                                    <th class="text-end">Số ngày chạy</th>
+                                    <th class="text-end">Tổng giờ chạy</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($driverProductivity as $driver)
+                                    <tr>
+                                        <td class="fw-bold">{{ $driver->full_name }}</td>
+                                        <td class="text-end">{{ $driver->total_trips }}</td>
+                                        <td class="text-end">{{ $driver->total_days }}</td>
+                                        <td class="text-end">{{ $driver->total_hours }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">Chưa có chuyến hoàn thành trong kỳ.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

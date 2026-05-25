@@ -8,14 +8,8 @@
     <a href="{{ route('customers.create') }}" class="btn btn-navy px-4 fw-bold">
         <i class="fa fa-plus me-2"></i> THÊM KHÁCH HÀNG
     </a>
+    <x-export-buttons />
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
@@ -26,6 +20,12 @@
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
+        <div class="col-md-2"><input type="text" name="customer_code" class="form-control border-light" placeholder="Mã KH" value="{{ request('customer_code') }}"></div>
+        <div class="col-md-2"><input type="text" name="customer_name" class="form-control border-light" placeholder="Tên KH" value="{{ request('customer_name') }}"></div>
+        <div class="col-md-2"><input type="text" name="tax_code" class="form-control border-light" placeholder="MST" value="{{ request('tax_code') }}"></div>
+        <div class="col-md-2"><input type="text" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}"></div>
+        <div class="col-md-2"><input type="text" name="contact_person" class="form-control border-light" placeholder="Người liên hệ" value="{{ request('contact_person') }}"></div>
+        <div class="col-md-2"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
     </form>
 </div>
 

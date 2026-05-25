@@ -20,6 +20,7 @@ class DocumentFactory extends Factory
     public function definition(): array
     {
         return [
+            'document_code' => 'DOC-'.fake()->unique()->numerify('######'),
             'shipping_job_id' => ShippingJob::factory(),
             'doc_category' => fake()->randomElement(['Tờ khai hải quan', 'Phiếu nâng hạ', 'Hóa đơn đầu vào', 'Biên bản giao nhận']),
             'document_flow' => fake()->randomElement(['input', 'output']),

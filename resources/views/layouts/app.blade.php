@@ -67,7 +67,7 @@
         @endif
     </style>
 </head>
-<body>
+<body class="{{ Auth::user()?->is_dark_mode ? 'theme-dark' : '' }}">
     <div id="main-app">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -122,6 +122,12 @@
                 </a>
                 @endif
 
+                @if(Auth::user()->hasRole(['ADMIN', 'DISPATCH', 'FIELD']))
+                <a href="{{ route('field-assignments.index') }}" class="nav-link-custom {{ request()->routeIs('field-assignments.*') ? 'active' : '' }}">
+                    <i class="fa fa-clipboard-check"></i> Phiếu hiện trường
+                </a>
+                @endif
+
                 @if(Auth::user()->hasRole(['ADMIN', 'ACCOUNTANT']))
                 <div class="small text-white text-uppercase fw-bold mt-4 mb-2 px-3" style="font-size: 0.65rem; letter-spacing: 1px;">Báo cáo & Thống kê</div>
                 <a href="{{ route('reports.operational') }}" class="nav-link-custom {{ request()->routeIs('reports.operational') ? 'active' : '' }}">
@@ -141,7 +147,7 @@
                 <div class="small text-white text-uppercase fw-bold mt-4 mb-2 px-3" style="font-size: 0.65rem; letter-spacing: 1px;">Hệ thống</div>
                 @if(Auth::user()->hasRole(['ADMIN']))
                 <a href="{{ route('settings.index') }}" class="nav-link-custom {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <i class="fa fa-gears"></i> Cài đặt
+                    <i class="fa fa-building"></i> Thông tin công ty
                 </a>
                 @endif
                 <a href="{{ route('users.index') }}" class="nav-link-custom {{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -152,7 +158,7 @@
 
             <div class="sidebar-footer">
                 <a href="{{ route('profile.edit') }}" class="nav-link-custom {{ request()->routeIs('profile.*') ? 'active' : '' }}">
-                    <i class="fa fa-user-circle"></i> Hồ sơ của tôi
+                    <i class="fa fa-user-gear"></i> Cài đặt
                 </a>
                 <form action="{{ route('logout') }}" method="POST" id="logout-form" class="d-none">
                     @csrf
@@ -167,12 +173,7 @@
         <div class="main-wrapper">
             <header class="top-navbar">
                 <button class="btn d-lg-none" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
-                <div class="search-box d-none d-md-block">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-light border-0"><i class="fa fa-search"></i></span>
-                        <input type="text" class="form-control bg-light border-0" style="width: 300px;" placeholder="Tìm kiếm...">
-                    </div>
-                </div>
+                <div></div>
                 <div class="d-flex align-items-center gap-3">
                     <!-- Notifications Dropdown -->
                     <div class="dropdown">

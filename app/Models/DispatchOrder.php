@@ -17,17 +17,28 @@ class DispatchOrder extends Model
         'order_number',
         'shipping_job_id',
         'vehicle_id',
+        'trailer_id',
         'driver_id',
         'dispatch_status',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'rejected_by',
+        'rejected_at',
+        'rejection_reason',
         'note',
         'start_location_id',
         'end_location_id',
+        'planned_departure_date',
+        'planned_return_date',
         'loading_percent',
         'current_latitude',
         'current_longitude',
         'start_time',
         'end_time',
         'fuel_quota',
+        'fuel_price_quota',
+        'actual_fuel_liters',
         'toll_quota',
         'created_by',
     ];
@@ -40,6 +51,11 @@ class DispatchOrder extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class);
+    }
+
+    public function trailer(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class, 'trailer_id');
     }
 
     public function driver(): BelongsTo
@@ -62,6 +78,16 @@ class DispatchOrder extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function rejecter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
+    }
+
     public function trackingLogs(): HasMany
     {
         return $this->hasMany(TrackingLog::class);
@@ -77,6 +103,10 @@ class DispatchOrder extends Model
         return [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
+            'planned_departure_date' => 'date',
+            'planned_return_date' => 'date',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'loading_percent' => 'integer',
         ];
     }

@@ -35,8 +35,9 @@
             </div>
             <div class="col-md-5 d-flex gap-2">
                 <button type="submit" class="btn btn-navy flex-fill">Xem báo cáo</button>
-                <a href="{{ route('reports.financial', request()->query() + ['export' => 'excel']) }}" class="btn btn-outline-success">Excel</a>
-                <button type="button" onclick="window.print()" class="btn btn-outline-navy">PDF</button>
+                @foreach(['xlsx' => 'Excel', 'csv' => 'CSV', 'docx' => 'Word', 'pdf' => 'PDF'] as $format => $label)
+                    <a href="{{ route('reports.financial', request()->query() + ['export' => $format]) }}" class="btn btn-outline-navy">{{ $label }}</a>
+                @endforeach
             </div>
         </form>
     </div>

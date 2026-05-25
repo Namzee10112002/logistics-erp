@@ -9,15 +9,9 @@
         <button class="btn btn-navy px-4 fw-bold">
             <i class="fa fa-print me-2"></i> IN DANH SÁCH
         </button>
+        <x-export-buttons />
     </div>
 </div>
-
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-        {{ session('success') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
 
 @if(Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
 <!-- Pending Jobs for Dispatching -->
@@ -80,6 +74,18 @@
         <div class="col-md-3">
             <button type="submit" class="btn btn-navy w-100">Tìm kiếm</button>
         </div>
+        <div class="col-md-2"><input type="text" name="order_number" class="form-control border-light" placeholder="Số lệnh" value="{{ request('order_number') }}"></div>
+        <div class="col-md-2"><input type="text" name="job_code" class="form-control border-light" placeholder="Mã Job" value="{{ request('job_code') }}"></div>
+        <div class="col-md-2"><input type="text" name="driver_name" class="form-control border-light" placeholder="Tài xế" value="{{ request('driver_name') }}"></div>
+        <div class="col-md-2"><input type="text" name="plate_number" class="form-control border-light" placeholder="Biển số" value="{{ request('plate_number') }}"></div>
+        <div class="col-md-2">
+            <select name="approval_status" class="form-select border-light">
+                <option value="">Duyệt</option>
+                <option value="pending" {{ request('approval_status') === 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                <option value="approved" {{ request('approval_status') === 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                <option value="rejected" {{ request('approval_status') === 'rejected' ? 'selected' : '' }}>Từ chối</option>
+            </select>
+        </div>
     </form>
 </div>
 
@@ -93,7 +99,7 @@
                     <th>Mã Job / Khách hàng</th>
                     <th>Tài Xế / Xe</th>
                     <th>Loading</th>
-                    <th>Trạng Thái</th>
+                    <th>Duyệt / Trạng Thái</th>
                     <th class="text-center">Thao tác</th>
                 </tr>
             </thead>
@@ -102,7 +108,7 @@
                     <tr>
                         <td class="ps-4">
                             <div class="fw-bold text-navy">{{ $order->order_number }}</div>
-                            <div class="small text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</div>
+                            <div class="small text-muted">{{ $order->created_at->format('d/m/Y') }}</div>
                         </td>
                         <td>
                             <div class="fw-bold"><a href="{{ route('shipping-jobs.show', $order->shipping_job_id) }}" class="text-decoration-none text-navy">{{ $order->shippingJob->job_code }}</a></div>
@@ -124,19 +130,29 @@
                         </td>
                         <td>
                             @php
-                                $statusClass = match($order->dispatch_status) {
-                                    'dispatched' => 'bg-info text-dark',
-                                    'on_way' => 'bg-warning text-dark',
-                                    'completed' => 'bg-success',
-                                    default => 'bg-light text-dark'
+                                $statusName = match(true) {
+                                    $order->approval_status === 'pending' => 'Chờ duyệt',
+                                    $order->approval_status === 'rejected' => 'Từ chối',
+                                    $order->dispatch_status === 'on_way' => 'Đang đi',
+                                    $order->dispatch_status === 'completed' => 'Hoàn thành',
+                                    default => 'Đã duyệt'
                                 };
-                                $statusName = match($order->dispatch_status) {
-                                    'dispatched' => 'Đã điều xe',
-                                    'on_way' => 'Đang đi',
-                                    'completed' => 'Hoàn thành',
-                                    default => 'Khác'
+                                $statusClass = match(true) {
+                                    $order->approval_status === 'pending' => 'bg-warning text-dark',
+                                    $order->approval_status === 'rejected' => 'bg-danger',
+                                    $order->dispatch_status === 'on_way' => 'bg-info text-dark',
+                                    $order->dispatch_status === 'completed' => 'bg-success',
+                                    default => 'bg-primary'
                                 };
                             @endphp
+                            @php
+                                $approvalName = match($order->approval_status) {
+                                    'approved' => 'Đã duyệt',
+                                    'rejected' => 'Từ chối',
+                                    default => 'Chờ duyệt'
+                                };
+                            @endphp
+                            <span class="badge bg-light text-dark border mb-1">{{ $approvalName }}</span>
                             <span class="badge {{ $statusClass }}">{{ $statusName }}</span>
                         </td>
                         <td class="text-center">

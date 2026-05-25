@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class DispatchOrderService
 {
-    public function getAll(array $filters = [])
+    public function getAll(array $filters = [], int $perPage = 10)
     {
         $query = DispatchOrder::with(['shippingJob.customer', 'vehicle', 'driver', 'creator', 'startLocation', 'endLocation'])
             ->latest();
@@ -35,7 +35,33 @@ class DispatchOrderService
             });
         }
 
-        return $query->paginate(10);
+        if (! empty($filters['dispatch_status'])) {
+            $query->where('dispatch_status', $filters['dispatch_status']);
+        }
+
+        if (! empty($filters['approval_status'])) {
+            $query->where('approval_status', $filters['approval_status']);
+        }
+
+        foreach (['order_number'] as $field) {
+            if (! empty($filters[$field])) {
+                $query->where($field, 'like', "%{$filters[$field]}%");
+            }
+        }
+
+        if (! empty($filters['driver_name'])) {
+            $query->whereHas('driver', fn ($sub) => $sub->where('full_name', 'like', "%{$filters['driver_name']}%"));
+        }
+
+        if (! empty($filters['plate_number'])) {
+            $query->whereHas('vehicle', fn ($sub) => $sub->where('plate_number', 'like', "%{$filters['plate_number']}%"));
+        }
+
+        if (! empty($filters['job_code'])) {
+            $query->whereHas('shippingJob', fn ($sub) => $sub->where('job_code', 'like', "%{$filters['job_code']}%"));
+        }
+
+        return $query->paginate($perPage);
     }
 
     public function create(array $data): DispatchOrder
@@ -44,8 +70,8 @@ class DispatchOrderService
             $data['order_number'] = $this->generateOrderNumber();
             $data['created_by'] = Auth::id();
             $data['dispatch_status'] = 'dispatched';
+            $data['approval_status'] = 'pending';
             $data['loading_percent'] = (int) ($data['loading_percent'] ?? 0);
-            $data['start_time'] = now();
 
             $shippingJob = ShippingJob::find($data['shipping_job_id']);
             $data['start_location_id'] = $data['start_location_id'] ?? $shippingJob?->pickup_location_id;
@@ -55,14 +81,9 @@ class DispatchOrderService
 
             // Create initial tracking log
             $dispatchOrder->trackingLogs()->create([
-                'status_update' => 'dispatched',
+                'status_update' => 'pending_approval',
                 'updated_by' => Auth::id(),
             ]);
-
-            // Update Shipping Job status
-            if ($shippingJob && $shippingJob->status === 'new') {
-                $shippingJob->update(['status' => 'dispatched']);
-            }
 
             return $dispatchOrder;
         });
