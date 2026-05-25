@@ -52,13 +52,6 @@ class ExportService
      */
     private function exportContext(string $format, string $title, string $periodLabel, array $rows, array $options): array
     {
-        $formatLabel = [
-            'csv' => 'CSV',
-            'xlsx' => 'Excel',
-            'docx' => 'Word',
-            'pdf' => 'PDF',
-        ][$format] ?? Str::upper($format);
-
         $companyName = $this->companyName();
         $contactLine = $this->companyContactLine();
         $exporter = auth()->user()?->name ?? 'Hệ thống';
@@ -66,8 +59,6 @@ class ExportService
 
         return [
             'format' => $format,
-            'format_label' => $formatLabel,
-            'file_type' => 'Tên loại file: '.$formatLabel,
             'title' => $title,
             'title_upper' => Str::upper($title),
             'period' => $periodLabel,
@@ -135,21 +126,18 @@ class ExportService
             $file = fopen('php://output', 'w');
             fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            fputcsv($file, [$context['file_type'], $context['company_name'].' | Logo: '.asset(self::LOGO_PATH)]);
-            fputcsv($file, [$context['contact_line']]);
-            fputcsv($file, [$context['title_upper']]);
-            fputcsv($file, [$context['content']]);
+            fputcsv($file, ['Công ty', $context['company_name']]);
+            fputcsv($file, ['Liên hệ', $context['contact_line']]);
+            fputcsv($file, ['Báo cáo', $context['title']]);
+            fputcsv($file, ['Kỳ dữ liệu', $context['period']]);
+            fputcsv($file, ['Người xuất', $context['exporter']]);
+            fputcsv($file, ['Số dòng', $context['row_count']]);
             fputcsv($file, []);
             fputcsv($file, $headers);
 
             foreach ($rows as $row) {
                 fputcsv($file, $row);
             }
-
-            fputcsv($file, []);
-            fputcsv($file, ['', $context['issued_place_date']]);
-            fputcsv($file, ['', 'Nhân viên xuất']);
-            fputcsv($file, [$context['footer']]);
 
             fclose($file);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
@@ -169,19 +157,20 @@ class ExportService
      */
     private function buildXlsx(array $context, array $headers, array $rows): string
     {
-        $columnCount = max(2, count($headers));
-        $lastColumn = $this->columnName($columnCount);
-        $headerRow = 6;
+        $dataColumnCount = max(1, count($headers));
+        $layoutColumnCount = max(6, $dataColumnCount);
+        $lastColumn = $this->columnName($layoutColumnCount);
+        $tableLastColumn = $this->columnName($dataColumnCount);
+        $headerRow = 7;
         $dataStartRow = $headerRow + 1;
-        $signatureRow = $dataStartRow + count($rows) + 2;
-        $footerRow = $signatureRow + 2;
 
         $sheetRows = [
-            1 => [$context['file_type'], ...array_fill(0, max(0, $columnCount - 2), ''), $context['company_name']],
+            1 => [$context['company_name']],
             2 => [$context['contact_line']],
             3 => [$context['title_upper']],
             4 => [$context['content']],
-            5 => [],
+            5 => ['Kỳ dữ liệu', $context['period'], 'Người xuất', $context['exporter'], 'Số dòng', $context['row_count']],
+            6 => [],
             $headerRow => $headers,
         ];
 
@@ -189,24 +178,16 @@ class ExportService
             $sheetRows[$dataStartRow + $index] = $row;
         }
 
-        $signatureCells = array_fill(0, $columnCount, '');
-        $signatureCells[$columnCount - 1] = $context['issued_place_date'];
-        $sheetRows[$signatureRow] = $signatureCells;
-
-        $exporterCells = array_fill(0, $columnCount, '');
-        $exporterCells[$columnCount - 1] = 'Nhân viên xuất';
-        $sheetRows[$signatureRow + 1] = $exporterCells;
-        $sheetRows[$footerRow] = [$context['footer']];
-
         $sheetData = collect($sheetRows)
             ->sortKeys()
-            ->map(function (array $row, int $rowIndex) use ($headerRow, $dataStartRow, $signatureRow): string {
+            ->map(function (array $row, int $rowIndex) use ($headerRow, $dataStartRow): string {
                 $style = match (true) {
                     $rowIndex === 1 => 1,
                     in_array($rowIndex, [2, 3, 4], true) => 2,
+                    $rowIndex === 5 => 5,
                     $rowIndex === $headerRow => 3,
-                    $rowIndex >= $dataStartRow && $rowIndex < $signatureRow - 1 => 4,
-                    default => 5,
+                    $rowIndex >= $dataStartRow => 4,
+                    default => 0,
                 };
 
                 return $this->xlsxRow($rowIndex, $row, $style);
@@ -214,10 +195,10 @@ class ExportService
             ->implode('');
 
         $mergeCells = [
+            "A1:{$lastColumn}1",
             "A2:{$lastColumn}2",
             "A3:{$lastColumn}3",
             "A4:{$lastColumn}4",
-            "A{$footerRow}:{$lastColumn}{$footerRow}",
         ];
 
         $worksheetRelationships = '';
@@ -228,7 +209,7 @@ class ExportService
 
         if ($logoBytes !== null) {
             $worksheetRelationships = '<drawing r:id="rIdLogo"/>';
-            $drawingColumn = max(1, $columnCount - 2);
+            $drawingColumn = max(1, $layoutColumnCount - 1);
             $drawingXml = $this->xlsxDrawingXml($drawingColumn);
             $drawingRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdImage1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.jpg"/></Relationships>';
             $files['xl/media/image1.jpg'] = $logoBytes;
@@ -240,8 +221,8 @@ class ExportService
         $mergeXml = '<mergeCells count="'.count($mergeCells).'">'.collect($mergeCells)
             ->map(fn (string $ref): string => '<mergeCell ref="'.$ref.'"/>')
             ->implode('').'</mergeCells>';
-        $autoFilterRef = 'A'.$headerRow.':'.$lastColumn.max($headerRow, $dataStartRow + count($rows) - 1);
-        $columnsXml = collect(range(1, $columnCount))
+        $autoFilterRef = 'A'.$headerRow.':'.$tableLastColumn.max($headerRow, $dataStartRow + count($rows) - 1);
+        $columnsXml = collect(range(1, $layoutColumnCount))
             ->map(fn (int $column): string => '<col min="'.$column.'" max="'.$column.'" width="22" customWidth="1"/>')
             ->implode('');
 
@@ -255,7 +236,7 @@ class ExportService
             'xl/workbook.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Bao cao" sheetId="1" r:id="rIdSheet1"/></sheets></workbook>',
             'xl/_rels/workbook.xml.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSheet1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
             'xl/styles.xml' => $this->xlsxStylesXml(),
-            'xl/worksheets/sheet1.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData>'.$mergeXml.'<autoFilter ref="'.$autoFilterRef.'"/>'.$worksheetRelationships.'</worksheet>',
+            'xl/worksheets/sheet1.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData>'.$mergeXml.'<autoFilter ref="'.$autoFilterRef.'"/>'.$worksheetRelationships.'</worksheet>',
         ], $files));
     }
 
@@ -312,7 +293,9 @@ class ExportService
     private function buildDocx(array $context, array $headers, array $rows): string
     {
         $logoBytes = $this->logoBytes();
-        $rightHeader = $this->docxParagraph((string) $context['company_name'], true, 'right');
+        $leftHeader = $this->docxParagraph((string) $context['company_name'], true, 'left', false, 24)
+            .$this->docxParagraph((string) $context['contact_line'], false, 'left', false, 18);
+        $rightHeader = '';
 
         if ($logoBytes !== null) {
             $rightHeader .= $this->docxParagraph($this->docxImageRun(), false, 'right', true);
@@ -331,12 +314,11 @@ class ExportService
             .'<w:body>'
             .$this->docxTable(
                 $this->docxRawRow([
-                    $this->docxParagraph((string) $context['file_type'], true, 'left'),
+                    $leftHeader,
                     $rightHeader,
                 ]),
                 false
             )
-            .$this->docxParagraph((string) $context['contact_line'], false, 'center')
             .$this->docxParagraph((string) $context['title_upper'], true, 'center', false, 32)
             .$this->docxParagraph((string) $context['content'], true, 'center')
             .$this->docxTable($tableRows, true)
@@ -416,9 +398,8 @@ class ExportService
 
         $content .= "0.10 0.14 0.49 rg\n0 535 842 60 re f\n";
         $content .= "0.03 0.64 0.62 rg\n0 535 842 6 re f\n";
-        $content .= $this->pdfText(42, 562, $this->ascii((string) $context['file_type']), 10, '1 1 1');
-        $content .= $this->pdfRightText(760, 568, $this->pdfLimit($this->ascii((string) $context['company_name']), 210), 9, '1 1 1');
-        $content .= $this->pdfRightText(760, 552, 'Logo cong ty', 7, '0.82 0.92 1');
+        $content .= $this->pdfText(42, 562, $this->pdfLimit($this->ascii((string) $context['company_name']), 340), 10, '1 1 1');
+        $content .= $this->pdfText(42, 546, $this->pdfLimit($this->ascii((string) $context['contact_line']), 380), 7, '0.82 0.92 1');
 
         if ($hasLogo) {
             $content .= "1 1 1 rg\n773 542 48 48 re f\n";
@@ -580,9 +561,9 @@ class ExportService
         return $name;
     }
 
-    private function docxParagraph(string $content, bool $bold, string $align = 'left', bool $raw = false, int $size = 22): string
+    private function docxParagraph(string $content, bool $bold, string $align = 'left', bool $raw = false, int $size = 22, ?string $color = null): string
     {
-        $text = $raw ? $content : '<w:r><w:rPr>'.($bold ? '<w:b/>' : '').'<w:sz w:val="'.$size.'"/></w:rPr><w:t>'.$this->xml($content).'</w:t></w:r>';
+        $text = $raw ? $content : '<w:r><w:rPr>'.($bold ? '<w:b/>' : '').($color ? '<w:color w:val="'.$color.'"/>' : '').'<w:sz w:val="'.$size.'"/></w:rPr><w:t>'.$this->xml($content).'</w:t></w:r>';
 
         return '<w:p><w:pPr><w:jc w:val="'.$align.'"/></w:pPr>'.$text.'</w:p>';
     }
@@ -601,9 +582,14 @@ class ExportService
      */
     private function docxTableRow(array $row, bool $bold = false): string
     {
-        return $this->docxRawRow(collect($row)
-            ->map(fn ($cell): string => $this->docxParagraph((string) $cell, $bold, 'center'))
-            ->all());
+        return '<w:tr>'.collect($row)
+            ->map(function ($cell) use ($bold): string {
+                $cellProperties = '<w:tcPr><w:tcW w:w="0" w:type="auto"/>'.($bold ? '<w:shd w:fill="1A237E"/>' : '').'</w:tcPr>';
+                $paragraph = $this->docxParagraph((string) $cell, $bold, 'center', false, $bold ? 20 : 18, $bold ? 'FFFFFF' : null);
+
+                return '<w:tc>'.$cellProperties.$paragraph.'</w:tc>';
+            })
+            ->implode('').'</w:tr>';
     }
 
     /**

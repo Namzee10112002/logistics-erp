@@ -148,7 +148,7 @@ class CustomerFeedbackWorkflowTest extends TestCase
     {
         $sales = $this->userWithRole('SALES');
 
-        foreach (['xlsx', 'docx', 'pdf'] as $format) {
+        foreach (['csv', 'xlsx', 'docx', 'pdf'] as $format) {
             $response = $this->actingAs($sales)
                 ->get(route('customers.index', ['export' => $format]));
 
@@ -157,6 +157,12 @@ class CustomerFeedbackWorkflowTest extends TestCase
             $content = $response->streamedContent();
 
             $this->assertNotEmpty($content);
+            $this->assertStringNotContainsString('Ten loai file', $content);
+
+            if ($format === 'csv') {
+                $this->assertStringContainsString('Công ty', $content);
+                $this->assertStringContainsString('Báo cáo', $content);
+            }
 
             if ($format === 'xlsx') {
                 $this->assertStringContainsString('PK', substr($content, 0, 2));
