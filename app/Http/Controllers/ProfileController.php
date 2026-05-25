@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
@@ -30,16 +31,23 @@ class ProfileController extends Controller
             'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
-        $user->update([
+        $profileData = [
             'name' => $request->name,
             'full_name' => $request->name,
             'email' => $request->email,
             'theme_color' => $request->theme_color,
             'is_dark_mode' => $request->boolean('is_dark_mode'),
-            'timezone' => $request->timezone,
-            'date_format' => $request->date_format,
-            'two_factor_enabled' => $request->boolean('two_factor_enabled'),
-        ]);
+        ];
+
+        foreach (['timezone', 'date_format', 'two_factor_enabled'] as $column) {
+            if (Schema::hasColumn('users', $column)) {
+                $profileData[$column] = $column === 'two_factor_enabled'
+                    ? $request->boolean($column)
+                    : $request->input($column);
+            }
+        }
+
+        $user->update($profileData);
 
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
