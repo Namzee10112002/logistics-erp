@@ -14,6 +14,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use ZipArchive;
 
 class CustomerFeedbackWorkflowTest extends TestCase
 {
@@ -165,13 +166,26 @@ class CustomerFeedbackWorkflowTest extends TestCase
             }
 
             if ($format === 'xlsx') {
-                $this->assertStringContainsString('PK', substr($content, 0, 2));
-                $this->assertStringContainsString('xl/worksheets/sheet1.xml', $content);
+                $entries = $this->officeZipEntries($content, [
+                    'xl/workbook.xml',
+                    'xl/worksheets/sheet1.xml',
+                    'xl/styles.xml',
+                ]);
+
+                $this->assertStringContainsString('<autoFilter', $entries['xl/worksheets/sheet1.xml']);
+                $this->assertStringContainsString('state="frozen"', $entries['xl/worksheets/sheet1.xml']);
+                $this->assertStringNotContainsString('<drawing', $entries['xl/worksheets/sheet1.xml']);
             }
 
             if ($format === 'docx') {
-                $this->assertStringContainsString('PK', substr($content, 0, 2));
-                $this->assertStringContainsString('word/document.xml', $content);
+                $entries = $this->officeZipEntries($content, [
+                    'word/document.xml',
+                    'word/_rels/document.xml.rels',
+                ]);
+
+                $this->assertStringContainsString('w:tblLayout w:type="fixed"', $entries['word/document.xml']);
+                $this->assertStringContainsString('w:tblGrid', $entries['word/document.xml']);
+                $this->assertStringContainsString('w:tblW w:w="15038"', $entries['word/document.xml']);
             }
 
             if ($format === 'pdf') {
@@ -179,6 +193,33 @@ class CustomerFeedbackWorkflowTest extends TestCase
                 $this->assertStringContainsString('Nhan vien xuat', $content);
             }
         }
+    }
+
+    /**
+     * @param  list<string>  $entryNames
+     * @return array<string, string>
+     */
+    private function officeZipEntries(string $content, array $entryNames): array
+    {
+        $path = tempnam(sys_get_temp_dir(), 'office-export-');
+
+        file_put_contents($path, $content);
+
+        $zip = new ZipArchive;
+        $this->assertTrue($zip->open($path) === true);
+
+        $entries = [];
+
+        foreach ($entryNames as $entryName) {
+            $entry = $zip->getFromName($entryName);
+            $this->assertNotFalse($entry, "Missing Office entry [{$entryName}].");
+            $entries[$entryName] = (string) $entry;
+        }
+
+        $zip->close();
+        @unlink($path);
+
+        return $entries;
     }
 
     /**

@@ -16,6 +16,8 @@ class ExportService
 
     private const LOGO_PATH = 'img/company-logo.jpg';
 
+    private const DOCX_CONTENT_WIDTH = 15038;
+
     /**
      * @param  list<string>  $headers
      * @param  list<list<string|int|float|null>>  $rows
@@ -201,43 +203,27 @@ class ExportService
             "A4:{$lastColumn}4",
         ];
 
-        $worksheetRelationships = '';
-        $drawingXml = '';
-        $drawingRels = '';
-        $logoBytes = $this->logoBytes();
-        $files = [];
-
-        if ($logoBytes !== null) {
-            $worksheetRelationships = '<drawing r:id="rIdLogo"/>';
-            $drawingColumn = max(1, $layoutColumnCount - 1);
-            $drawingXml = $this->xlsxDrawingXml($drawingColumn);
-            $drawingRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdImage1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.jpg"/></Relationships>';
-            $files['xl/media/image1.jpg'] = $logoBytes;
-            $files['xl/drawings/drawing1.xml'] = $drawingXml;
-            $files['xl/drawings/_rels/drawing1.xml.rels'] = $drawingRels;
-            $files['xl/worksheets/_rels/sheet1.xml.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>';
-        }
-
         $mergeXml = '<mergeCells count="'.count($mergeCells).'">'.collect($mergeCells)
             ->map(fn (string $ref): string => '<mergeCell ref="'.$ref.'"/>')
             ->implode('').'</mergeCells>';
         $autoFilterRef = 'A'.$headerRow.':'.$tableLastColumn.max($headerRow, $dataStartRow + count($rows) - 1);
-        $columnsXml = collect(range(1, $layoutColumnCount))
-            ->map(fn (int $column): string => '<col min="'.$column.'" max="'.$column.'" width="22" customWidth="1"/>')
+        $columnsXml = collect($this->xlsxColumnWidths($headers, $rows, $layoutColumnCount))
+            ->map(fn (float $width, int $index): string => '<col min="'.($index + 1).'" max="'.($index + 1).'" width="'.$width.'" customWidth="1"/>')
             ->implode('');
+        $createdAt = now()->toAtomString();
 
-        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
-            .($logoBytes !== null ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : '')
-            .'</Types>';
+        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
 
-        return $this->zip(array_merge([
+        return $this->zip([
             '[Content_Types].xml' => $contentTypes,
-            '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdWorkbook" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+            '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdWorkbook" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rIdCore" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rIdApp" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>',
+            'docProps/core.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'.$this->xml((string) $context['title']).'</dc:title><dc:creator>'.$this->xml((string) $context['exporter']).'</dc:creator><cp:lastModifiedBy>'.$this->xml((string) $context['exporter']).'</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:modified></cp:coreProperties>',
+            'docProps/app.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nguyen Tam Logistics</Application></Properties>',
             'xl/workbook.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Bao cao" sheetId="1" r:id="rIdSheet1"/></sheets></workbook>',
             'xl/_rels/workbook.xml.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSheet1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
             'xl/styles.xml' => $this->xlsxStylesXml(),
-            'xl/worksheets/sheet1.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData>'.$mergeXml.'<autoFilter ref="'.$autoFilterRef.'"/>'.$worksheetRelationships.'</worksheet>',
-        ], $files));
+            'xl/worksheets/sheet1.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData>'.$mergeXml.'<autoFilter ref="'.$autoFilterRef.'"/></worksheet>',
+        ]);
     }
 
     /**
@@ -259,6 +245,28 @@ class ExportService
         return sprintf('<row r="%d">%s</row>', $rowIndex, $cells);
     }
 
+    /**
+     * @param  list<string>  $headers
+     * @param  list<list<string|int|float|null>>  $rows
+     * @return list<float>
+     */
+    private function xlsxColumnWidths(array $headers, array $rows, int $layoutColumnCount): array
+    {
+        $widths = [];
+
+        for ($column = 0; $column < $layoutColumnCount; $column++) {
+            $maxLength = Str::length((string) ($headers[$column] ?? ''));
+
+            foreach (array_slice($rows, 0, 60) as $row) {
+                $maxLength = max($maxLength, Str::length((string) ($row[$column] ?? '')));
+            }
+
+            $widths[] = (float) min(42, max(14, $maxLength + 4));
+        }
+
+        return $widths;
+    }
+
     private function xlsxStylesXml(): string
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -277,14 +285,6 @@ class ExportService
             .'</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
     }
 
-    private function xlsxDrawingXml(int $column): string
-    {
-        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            .'<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            .'<xdr:oneCellAnchor><xdr:from><xdr:col>'.$column.'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="914400" cy="914400"/>'
-            .'<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="1" name="Company Logo"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rIdImage1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
-    }
-
     /**
      * @param  array<string, string|int>  $context
      * @param  list<string>  $headers
@@ -293,8 +293,9 @@ class ExportService
     private function buildDocx(array $context, array $headers, array $rows): string
     {
         $logoBytes = $this->logoBytes();
-        $leftHeader = $this->docxParagraph((string) $context['company_name'], true, 'left', false, 24)
-            .$this->docxParagraph((string) $context['contact_line'], false, 'left', false, 18);
+        $headerColumnWidths = [11200, self::DOCX_CONTENT_WIDTH - 11200];
+        $tableColumnWidths = $this->docxColumnWidths($headers, $rows);
+        $leftHeader = $this->docxParagraph((string) $context['company_name'], true, 'left', false, 24);
         $rightHeader = '';
 
         if ($logoBytes !== null) {
@@ -303,10 +304,12 @@ class ExportService
             $rightHeader .= $this->docxParagraph('Logo: '.asset(self::LOGO_PATH), false, 'right');
         }
 
-        $tableRows = $this->docxTableRow($headers, true);
+        $rightHeader .= $this->docxParagraph((string) $context['company_name'], true, 'right', false, 18);
+
+        $tableRows = $this->docxTableRow($headers, true, $tableColumnWidths);
 
         foreach ($rows as $row) {
-            $tableRows .= $this->docxTableRow($row);
+            $tableRows .= $this->docxTableRow($row, false, $tableColumnWidths);
         }
 
         $document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -316,12 +319,15 @@ class ExportService
                 $this->docxRawRow([
                     $leftHeader,
                     $rightHeader,
-                ]),
-                false
+                ], $headerColumnWidths),
+                false,
+                self::DOCX_CONTENT_WIDTH,
+                $headerColumnWidths
             )
+            .$this->docxParagraph((string) $context['contact_line'], false, 'center', false, 18, '475569')
             .$this->docxParagraph((string) $context['title_upper'], true, 'center', false, 32)
             .$this->docxParagraph((string) $context['content'], true, 'center')
-            .$this->docxTable($tableRows, true)
+            .$this->docxTable($tableRows, true, self::DOCX_CONTENT_WIDTH, $tableColumnWidths)
             .$this->docxParagraph((string) $context['issued_place_date'], false, 'right')
             .$this->docxParagraph('Nhân viên xuất', true, 'right')
             .$this->docxParagraph((string) $context['footer'], true, 'center')
@@ -568,24 +574,79 @@ class ExportService
         return '<w:p><w:pPr><w:jc w:val="'.$align.'"/></w:pPr>'.$text.'</w:p>';
     }
 
-    private function docxTable(string $rows, bool $bordered): string
+    /**
+     * @param  list<int>|null  $columnWidths
+     */
+    private function docxTable(string $rows, bool $bordered, int $width = self::DOCX_CONTENT_WIDTH, ?array $columnWidths = null): string
     {
         $borders = $bordered
             ? '<w:tblBorders><w:top w:val="single" w:sz="6"/><w:left w:val="single" w:sz="6"/><w:bottom w:val="single" w:sz="6"/><w:right w:val="single" w:sz="6"/><w:insideH w:val="single" w:sz="6"/><w:insideV w:val="single" w:sz="6"/></w:tblBorders>'
             : '';
+        $grid = $columnWidths === null ? '' : '<w:tblGrid>'.collect($columnWidths)
+            ->map(fn (int $columnWidth): string => '<w:gridCol w:w="'.$columnWidth.'"/>')
+            ->implode('').'</w:tblGrid>';
 
-        return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>'.$borders.'</w:tblPr>'.$rows.'</w:tbl>';
+        return '<w:tbl><w:tblPr><w:tblW w:w="'.$width.'" w:type="dxa"/><w:tblLayout w:type="fixed"/>'.$borders.'<w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>'.$grid.$rows.'</w:tbl>';
+    }
+
+    /**
+     * @param  list<string>  $headers
+     * @param  list<list<string|int|float|null>>  $rows
+     * @return list<int>
+     */
+    private function docxColumnWidths(array $headers, array $rows): array
+    {
+        $columnCount = max(1, count($headers));
+        $weights = [];
+
+        for ($column = 0; $column < $columnCount; $column++) {
+            $maxLength = Str::length((string) ($headers[$column] ?? ''));
+
+            foreach (array_slice($rows, 0, 40) as $row) {
+                $maxLength = max($maxLength, Str::length((string) ($row[$column] ?? '')));
+            }
+
+            $weights[] = min(36, max(8, $maxLength));
+        }
+
+        $totalWeight = max(1, array_sum($weights));
+        $minimumWidth = max(450, min(900, intdiv(self::DOCX_CONTENT_WIDTH, max(1, $columnCount * 3))));
+        $remainingWidth = self::DOCX_CONTENT_WIDTH;
+        $widths = [];
+
+        foreach ($weights as $index => $weight) {
+            if ($index === $columnCount - 1) {
+                $widths[] = $remainingWidth;
+
+                break;
+            }
+
+            $reservedForRemaining = $minimumWidth * ($columnCount - $index - 1);
+            $availableForColumn = max($minimumWidth, $remainingWidth - $reservedForRemaining);
+            $proportionalWidth = (int) round(self::DOCX_CONTENT_WIDTH * ($weight / $totalWeight));
+            $columnWidth = max($minimumWidth, min($availableForColumn, $proportionalWidth));
+            $widths[] = $columnWidth;
+            $remainingWidth -= $columnWidth;
+        }
+
+        return $widths;
     }
 
     /**
      * @param  list<string|int|float|null>  $row
+     * @param  list<int>|null  $columnWidths
      */
-    private function docxTableRow(array $row, bool $bold = false): string
+    private function docxTableRow(array $row, bool $bold = false, ?array $columnWidths = null): string
     {
-        return '<w:tr>'.collect($row)
-            ->map(function ($cell) use ($bold): string {
-                $cellProperties = '<w:tcPr><w:tcW w:w="0" w:type="auto"/>'.($bold ? '<w:shd w:fill="1A237E"/>' : '').'</w:tcPr>';
-                $paragraph = $this->docxParagraph((string) $cell, $bold, 'center', false, $bold ? 20 : 18, $bold ? 'FFFFFF' : null);
+        $columnCount = max(1, count($row), count($columnWidths ?? []));
+        $values = collect(array_slice(array_pad(array_values($row), $columnCount, ''), 0, $columnCount));
+
+        return '<w:tr>'.$values
+            ->map(function ($cell, int $index) use ($bold, $columnWidths, $columnCount): string {
+                $width = (int) ($columnWidths[$index] ?? intdiv(self::DOCX_CONTENT_WIDTH, $columnCount));
+                $cellProperties = $this->docxCellProperties($width, $bold ? '1A237E' : null);
+                $alignment = $bold ? 'center' : $this->docxCellAlignment($cell);
+                $paragraph = $this->docxParagraph((string) $cell, $bold, $alignment, false, $bold ? 20 : 18, $bold ? 'FFFFFF' : null);
 
                 return '<w:tc>'.$cellProperties.$paragraph.'</w:tc>';
             })
@@ -594,12 +655,29 @@ class ExportService
 
     /**
      * @param  list<string>  $cells
+     * @param  list<int>  $columnWidths
      */
-    private function docxRawRow(array $cells): string
+    private function docxRawRow(array $cells, array $columnWidths): string
     {
         return '<w:tr>'.collect($cells)
-            ->map(fn (string $cell): string => '<w:tc><w:tcPr><w:tcW w:w="0" w:type="auto"/></w:tcPr>'.$cell.'</w:tc>')
+            ->map(fn (string $cell, int $index): string => '<w:tc>'.$this->docxCellProperties((int) $columnWidths[$index]).$cell.'</w:tc>')
             ->implode('').'</w:tr>';
+    }
+
+    private function docxCellProperties(int $width, ?string $fill = null): string
+    {
+        return '<w:tcPr><w:tcW w:w="'.$width.'" w:type="dxa"/><w:vAlign w:val="center"/>'.($fill ? '<w:shd w:fill="'.$fill.'"/>' : '').'</w:tcPr>';
+    }
+
+    private function docxCellAlignment(string|int|float|null $cell): string
+    {
+        $value = trim((string) $cell);
+
+        if ($value === '' || is_numeric(str_replace([',', '.', ' '], '', $value))) {
+            return 'center';
+        }
+
+        return Str::length($value) <= 16 ? 'center' : 'left';
     }
 
     private function docxImageRun(): string
