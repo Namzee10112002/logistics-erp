@@ -276,9 +276,9 @@ class DatabaseSeeder extends Seeder
     private function seedSettings(): void
     {
         $settings = [
-            ['key' => 'company.name', 'value' => 'Example Logistics', 'group' => 'company', 'description' => 'Tên doanh nghiệp hiển thị trên chứng từ.'],
+            ['key' => 'company.name', 'value' => 'Công Ty TNHH TMDV GNVT NGUYÊN TÂM', 'group' => 'company', 'description' => 'Tên doanh nghiệp hiển thị trên chứng từ.'],
             ['key' => 'company.tax_code', 'value' => '0312345678', 'group' => 'company', 'description' => 'Mã số thuế doanh nghiệp.'],
-            ['key' => 'company.address', 'value' => 'TP. Hồ Chí Minh', 'group' => 'company', 'description' => 'Địa chỉ doanh nghiệp.'],
+            ['key' => 'company.address', 'value' => 'Hải Phòng', 'group' => 'company', 'description' => 'Địa chỉ doanh nghiệp.'],
             ['key' => 'company.email', 'value' => 'contact@nguyentam-logistics.example', 'group' => 'company', 'description' => 'Email liên hệ công ty.'],
             ['key' => 'company.phone', 'value' => '0900000000', 'group' => 'company', 'description' => 'Số điện thoại liên hệ công ty.'],
             ['key' => 'company.contact_person', 'value' => 'Bộ phận điều vận', 'group' => 'company', 'description' => 'Người/bộ phận tiếp nhận liên hệ.'],

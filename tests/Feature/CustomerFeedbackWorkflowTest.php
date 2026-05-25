@@ -144,6 +144,37 @@ class CustomerFeedbackWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_list_exports_use_distinct_file_templates(): void
+    {
+        $sales = $this->userWithRole('SALES');
+
+        foreach (['xlsx', 'docx', 'pdf'] as $format) {
+            $response = $this->actingAs($sales)
+                ->get(route('customers.index', ['export' => $format]));
+
+            $response->assertOk();
+
+            $content = $response->streamedContent();
+
+            $this->assertNotEmpty($content);
+
+            if ($format === 'xlsx') {
+                $this->assertStringContainsString('PK', substr($content, 0, 2));
+                $this->assertStringContainsString('xl/worksheets/sheet1.xml', $content);
+            }
+
+            if ($format === 'docx') {
+                $this->assertStringContainsString('PK', substr($content, 0, 2));
+                $this->assertStringContainsString('word/document.xml', $content);
+            }
+
+            if ($format === 'pdf') {
+                $this->assertStringStartsWith('%PDF', $content);
+                $this->assertStringContainsString('Nhan vien xuat', $content);
+            }
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
