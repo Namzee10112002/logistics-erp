@@ -10,18 +10,15 @@
                 <h4 class="fw-bold text-navy">Danh sách Nhân viên</h4>
                 <p class="text-muted small">Quản lý tài khoản và phân quyền truy cập hệ thống.</p>
             </div>
-            <a href="{{ route('users.create') }}" class="btn btn-navy fw-bold px-4">
-                <i class="fa fa-user-plus me-2"></i> THÊM NHÂN VIÊN
-            </a>
             <x-export-buttons />
         </div>
     </div>
 
     <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
         <form action="{{ route('users.index') }}" method="GET" class="row g-3">
-            <div class="col-md-10">
+            <!-- <div class="col-md-10">
                 <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã nhân sự, họ tên, email, chức vụ, bộ phận..." value="{{ request('search') }}">
-            </div>
+            </div> -->
             <div class="col-md-2">
                 <button type="submit" class="btn btn-navy w-100">Lọc</button>
             </div>
@@ -39,6 +36,12 @@
                 </select>
             </div>
         </form>
+    </div>
+    
+    <div class="d-flex justify-content-end mb-4">
+        <a href="{{ route('users.create') }}" class="btn btn-navy fw-bold px-4">
+            <i class="fa fa-user-plus me-2"></i> THÊM NHÂN VIÊN
+        </a>
     </div>
 
     <div class="card border-0 rounded-4 shadow-sm">

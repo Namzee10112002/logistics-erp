@@ -34,7 +34,7 @@ class CustomerRequest extends FormRequest
             'address' => ['required', 'string'],
             'phone' => ['nullable', 'regex:/^0\d{9}$/'],
             'email' => ['nullable', 'email', 'max:255'],
-            'contact_person' => ['nullable', Rule::in(array_keys(LogisticsOptions::customerContactRoles()))],
+            'contact_person' => ['nullable', 'string', 'max:255'],
         ];
     }
 

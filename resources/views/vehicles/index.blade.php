@@ -5,17 +5,15 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Quản lý Đội xe</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#vehicleModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM XE MỚI
-    </button>
+    
     <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('vehicles.index') }}" method="GET" class="row g-3">
-        <div class="col-md-7">
+        <!-- <div class="col-md-7">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo biển số, loại xe..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="status" class="form-select border-light">
                 <option value="">Tất cả trạng thái</option>
@@ -45,6 +43,12 @@
             </select>
         </div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#vehicleModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM XE MỚI
+    </button>
 </div>
 
 <!-- Data Table -->
@@ -146,7 +150,10 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Biển Số Xe</label>
-                            <input type="text" name="plate_number" id="plate_number" class="form-control bg-light border-0" placeholder="VD: 51C-123.45" required>
+                            <input type="text" name="plate_number" id="plate_number" class="form-control bg-light border-0 @error('plate_number') is-invalid @enderror" placeholder="VD: 51C-123.45" required pattern="^[0-9]{2}[A-Z]{1,2}-[0-9]{3}\.[0-9]{2}$" title="Vui lòng nhập đúng định dạng biển số chuẩn (VD: 30A-123.45 hoặc 51LD-123.45)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-\.]/g, '');">
+                            @error('plate_number')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Loại Xe</label>

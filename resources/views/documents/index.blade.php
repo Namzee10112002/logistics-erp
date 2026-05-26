@@ -13,9 +13,9 @@
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('documents.index') }}" method="GET" class="row g-3">
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã job, khách hàng, loại chứng từ..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-2">
             <select name="document_flow" class="form-select border-light">
                 <option value="">Tất cả luồng</option>

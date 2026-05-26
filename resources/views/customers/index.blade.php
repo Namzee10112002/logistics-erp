@@ -5,18 +5,15 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Danh mục Khách hàng</h4>
-    <a href="{{ route('customers.create') }}" class="btn btn-navy px-4 fw-bold">
-        <i class="fa fa-plus me-2"></i> THÊM KHÁCH HÀNG
-    </a>
     <x-export-buttons />
 </div>
 
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('customers.index') }}" method="GET" class="row g-3">
-        <div class="col-md-10">
+        <!-- <div class="col-md-10">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã KH, tên, MST, email, người liên hệ, số điện thoại..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-2">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
@@ -27,6 +24,12 @@
         <div class="col-md-2"><input type="text" name="contact_person" class="form-control border-light" placeholder="Người liên hệ" value="{{ request('contact_person') }}"></div>
         <div class="col-md-2"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <a href="{{ route('customers.create') }}" class="btn btn-navy px-4 fw-bold">
+        <i class="fa fa-plus me-2"></i> THÊM KHÁCH HÀNG
+    </a>
 </div>
 
 <!-- Data Table -->

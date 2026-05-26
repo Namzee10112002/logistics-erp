@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashAdvanceController;
 use App\Http\Controllers\CustomerController;
@@ -52,10 +53,14 @@ Route::middleware('auth')->group(function () {
     });
 
     // System Settings & Backup (ADMIN / GĐ)
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+
     Route::middleware('role:ADMIN')->group(function () {
-        Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
         Route::get('/settings/backup', [SettingController::class, 'backup'])->name('settings.backup');
+        Route::post('/settings/restore', [SettingController::class, 'restore'])->name('settings.restore');
+        Route::post('/settings/upload-asset', [SettingController::class, 'uploadAsset'])->name('settings.upload-asset');
+        Route::get('/settings/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
 
     // User Management (ADMIN, DISPATCH)
@@ -144,10 +149,14 @@ Route::middleware('auth')->group(function () {
         Route::get('debit-notes/{debitNote}', [DebitNoteController::class, 'show'])->name('debit-notes.show');
         Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::post('recurring-expenses', [RecurringExpenseController::class, 'store'])->name('recurring-expenses.store');
+        Route::get('recurring-expenses/{recurringExpense}/edit', [RecurringExpenseController::class, 'edit'])->name('recurring-expenses.edit');
+        Route::put('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'update'])->name('recurring-expenses.update');
         Route::delete('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'destroy'])->name('recurring-expenses.destroy');
     });
 
     // Profile Settings (All users)
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', function () {
+        return redirect()->route('settings.index');
+    })->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });

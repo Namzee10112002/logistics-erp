@@ -5,17 +5,15 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Quản lý Đội ngũ Tài xế</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#driverModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM TÀI XẾ
-    </button>
+    
     <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('drivers.index') }}" method="GET" class="row g-3">
-        <div class="col-md-5">
+        <!-- <div class="col-md-5">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã tài xế, tên, GPLX, cấp bậc..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="rank" class="form-select border-light">
                 <option value="">Cấp bậc</option>
@@ -39,6 +37,12 @@
         <div class="col-md-3"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
         <div class="col-md-3"><input type="text" name="license_number" class="form-control border-light" placeholder="GPLX" value="{{ request('license_number') }}"></div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#driverModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM TÀI XẾ
+    </button>
 </div>
 
 <!-- Data Table -->
@@ -121,11 +125,11 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Họ và Tên</label>
-                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" required>
+                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" required onblur="this.value = this.value.trim().replace(/\s+/g, ' ').replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Điện Thoại</label>
-                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required>
+                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Ngày sinh</label>
@@ -133,7 +137,7 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Bằng Lái</label>
-                            <input type="text" name="license_number" id="license_number" class="form-control bg-light border-0" required>
+                            <input type="text" name="license_number" id="license_number" class="form-control bg-light border-0" required oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Ngày bắt đầu làm việc</label>

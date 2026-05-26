@@ -14,28 +14,28 @@
     <form action="{{ route('customers.store') }}" method="POST">
         @csrf
         <div class="row g-4">
-            <div class="col-md-4">
+            <!-- <div class="col-md-4">
                 <label class="form-label fw-bold">Mã Khách Hàng</label>
                 <input type="text" class="form-control bg-light" value="Tự sinh khi lưu" disabled>
                 <div class="form-text">Quy định: KH-YYMM-XXX, không chỉnh sửa thủ công.</div>
-            </div>
+            </div> -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">Tên Khách Hàng <span class="text-danger">*</span></label>
-                <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name') }}" required>
+                <input type="text" name="customer_name" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name') }}" required onblur="this.value = this.value.trim().replace(/\s+/g, ' ').replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });">
                 @error('customer_name')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
             <div class="col-md-6">
                 <label class="form-label fw-bold">Tên Công Ty (nếu có)</label>
-                <input type="text" name="company_name" class="form-control @error('company_name') is-invalid @enderror" value="{{ old('company_name') }}">
+                <input type="text" name="company_name" class="form-control @error('company_name') is-invalid @enderror" value="{{ old('company_name') }}" onblur="this.value = this.value.trim().replace(/\s+/g, ' ').replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });">
                 @error('company_name')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Mã Số Thuế <span class="text-danger">*</span></label>
-                <input type="text" name="tax_code" class="form-control @error('tax_code') is-invalid @enderror" value="{{ old('tax_code') }}" maxlength="10" inputmode="numeric" required>
+                <input type="text" name="tax_code" class="form-control @error('tax_code') is-invalid @enderror" value="{{ old('tax_code') }}" maxlength="10" inputmode="numeric" required oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                 @error('tax_code')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -51,20 +51,18 @@
 
             <div class="col-md-4">
                 <label class="form-label fw-bold">Số điện thoại liên hệ</label>
-                <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" maxlength="10" inputmode="numeric">
+                <input type="text" name="phone" class="form-control @error('phone') is-invalid @enderror" value="{{ old('phone') }}" maxlength="10" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Email</label>
-                <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}">
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Người liên hệ</label>
-                <select name="contact_person" class="form-select">
-                    <option value="">Chọn người liên hệ</option>
-                    @foreach(\App\Support\LogisticsOptions::customerContactRoles() as $value => $label)
-                        <option value="{{ $value }}" {{ old('contact_person') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <input type="text" name="contact_person" class="form-control @error('contact_person') is-invalid @enderror" value="{{ old('contact_person') }}" placeholder="Nhập tên người liên hệ">
+                @error('contact_person')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="col-12 mt-5">
@@ -75,3 +73,28 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const emailInput = document.querySelector('input[name="email"]');
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                this.value = this.value.toLowerCase().replace(/\s/g, '');
+                const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                let errorDiv = document.getElementById('js-email-error');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.id = 'js-email-error';
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.innerText = 'Email không đúng định dạng (Ví dụ: user@example.com)';
+                    this.parentNode.appendChild(errorDiv);
+                }
+                const isValid = this.value.length === 0 || pattern.test(this.value);
+                this.classList.toggle('is-invalid', !isValid);
+                errorDiv.style.display = isValid ? 'none' : 'block';
+            });
+        }
+    });
+</script>
+@endpush

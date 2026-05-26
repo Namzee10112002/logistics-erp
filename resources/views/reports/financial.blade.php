@@ -15,13 +15,13 @@
         <form action="{{ route('reports.financial') }}" method="GET" class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label small fw-bold text-muted">Kỳ báo cáo</label>
-                <select name="period" class="form-select">
+                <select name="period" id="filter-period" class="form-select">
                     <option value="last_6_months" {{ request('period', 'last_6_months') === 'last_6_months' ? 'selected' : '' }}>6 tháng gần nhất</option>
                     <option value="quarter" {{ request('period') === 'quarter' ? 'selected' : '' }}>Theo quý</option>
                     <option value="year" {{ request('period') === 'year' ? 'selected' : '' }}>Theo năm</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2" id="filter-quarter-wrapper">
                 <label class="form-label small fw-bold text-muted">Quý</label>
                 <select name="quarter" class="form-select">
                     @for($quarter = 1; $quarter <= 4; $quarter++)
@@ -29,7 +29,7 @@
                     @endfor
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2" id="filter-year-wrapper">
                 <label class="form-label small fw-bold text-muted">Năm</label>
                 <input type="number" name="year" class="form-control" value="{{ request('year', now()->year) }}">
             </div>
@@ -83,7 +83,7 @@
         <div class="col-lg-8">
             <div class="card border-0 rounded-4 shadow-sm h-100">
                 <div class="card-body p-4">
-                    <h6 class="fw-bold text-navy mb-4">Biến động Doanh thu (6 tháng gần nhất)</h6>
+                    <h6 class="fw-bold text-navy mb-4">Biến động Doanh thu ({{ $periodLabel }})</h6>
                     <div style="height: 300px;">
                         <canvas id="revenueChart"></canvas>
                     </div>
@@ -131,16 +131,28 @@
                                         <td class="fw-bold text-navy">{{ $expense->expense_code }}</td>
                                         <td>{{ $expense->name }}</td>
                                         <td>{{ $expense->category ?? '---' }}</td>
-                                        <td>{{ $expense->cycle }}</td>
+                                        <td>
+                                            {{ match($expense->cycle) {
+                                                'monthly' => 'Hàng tháng',
+                                                'quarterly' => 'Hàng quý',
+                                                'yearly' => 'Hàng năm',
+                                                default => $expense->cycle
+                                            } }}
+                                        </td>
                                         <td class="text-end fw-bold">{{ number_format($expense->amount) }}đ</td>
                                         <td class="text-center no-print">
-                                            <form action="{{ route('recurring-expenses.destroy', $expense) }}" method="POST" onsubmit="return confirm('Xóa chi phí cố định này?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <a href="{{ route('recurring-expenses.edit', $expense) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <form action="{{ route('recurring-expenses.destroy', $expense) }}" method="POST" onsubmit="return confirm('Xóa chi phí cố định này?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -311,6 +323,26 @@
             plugins: { legend: { position: 'bottom' } }
         }
     });
+
+    function handlePeriodChange() {
+        const period = document.getElementById('filter-period').value;
+        const quarterWrapper = document.getElementById('filter-quarter-wrapper');
+        const yearWrapper = document.getElementById('filter-year-wrapper');
+        
+        if (period === 'last_6_months') {
+            quarterWrapper.style.display = 'none';
+            yearWrapper.style.display = 'none';
+        } else if (period === 'quarter') {
+            quarterWrapper.style.display = 'block';
+            yearWrapper.style.display = 'block';
+        } else if (period === 'year') {
+            quarterWrapper.style.display = 'none';
+            yearWrapper.style.display = 'block';
+        }
+    }
+
+    document.getElementById('filter-period').addEventListener('change', handlePeriodChange);
+    handlePeriodChange(); // call on load
 </script>
 <style>
     @media print {

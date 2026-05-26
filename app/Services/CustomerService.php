@@ -39,13 +39,33 @@ class CustomerService
      */
     public function create(array $data)
     {
-        $data['customer_code'] = $this->generateCustomerCode();
-
         if (empty($data['company_name'])) {
             $data['company_name'] = $data['customer_name'];
         }
 
-        return Customer::create($data);
+        $attempts = 0;
+        while (true) {
+            try {
+                if ($attempts === 0) {
+                    $data['customer_code'] = $this->generateCustomerCode();
+                } else {
+                    $parts = explode('-', $data['customer_code']);
+                    $sequence = (int) array_pop($parts);
+                    $parts[] = str_pad($sequence + 1, 3, '0', STR_PAD_LEFT);
+                    $data['customer_code'] = implode('-', $parts);
+                }
+                
+                return Customer::create($data);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                if (!str_contains($e->getMessage(), 'customers_customer_code_unique')) {
+                    throw $e;
+                }
+                $attempts++;
+                if ($attempts >= 20) {
+                    throw $e;
+                }
+            }
+        }
     }
 
     /**

@@ -32,35 +32,30 @@
                         </div>
 
                         <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Mã nhân sự</label>
-                                <input type="text" class="form-control bg-light" value="Tự sinh khi lưu" disabled>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Chức vụ</label>
-                                <select name="position" class="form-select" required>
-                                    <option value="">Chọn chức vụ</option>
-                                    @foreach($positions as $value => $label)
-                                        <option value="{{ $value }}" {{ old('position') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-bold">Bộ phận / phòng ban</label>
-                                <select name="department" class="form-select" required>
-                                    <option value="">Chọn bộ phận</option>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Bộ phận / Phòng ban</label>
+                                <select id="department" name="department" class="form-select @error('department') is-invalid @enderror" required>
+                                    <option value="">-- Chọn bộ phận --</option>
                                     @foreach($departments as $value => $label)
                                         <option value="{{ $value }}" {{ old('department') === $value ? 'selected' : '' }}>{{ $label }}</option>
                                     @endforeach
                                 </select>
+                                @error('department') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Chức vụ</label>
+                                <select id="position" name="position" class="form-select @error('position') is-invalid @enderror" required>
+                                    <option value="">-- Chọn bộ phận trước --</option>
+                                </select>
+                                @error('position') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Ngày sinh</label>
-                                <input type="date" name="date_of_birth" class="form-control" value="{{ old('date_of_birth') }}" required>
+                                <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: 25/05/1990" name="date_of_birth" class="form-control" value="{{ old('date_of_birth') }}" min="1950-01-01" max="{{ now()->subYears(18)->toDateString() }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Ngày tham gia</label>
-                                <input type="date" name="joined_at" class="form-control" value="{{ old('joined_at', now()->toDateString()) }}" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}" required>
+                                <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: {{ now()->format('d/m/Y') }}" name="joined_at" class="form-control" value="{{ old('joined_at', now()->toDateString()) }}" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}" required>
                             </div>
                         </div>
 
@@ -80,13 +75,31 @@
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Mật khẩu</label>
-                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                                <div class="form-text">Tối thiểu 8 ký tự, có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</div>
-                                @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <div class="input-group">
+                                    <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" tabindex="-1">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="password-requirements" class="form-text text-danger mt-2" style="display: none;">
+                                    <ul class="mb-0 ps-3">
+                                        <li id="req-length">Tối thiểu 8 ký tự</li>
+                                        <li id="req-mixed">Có chữ hoa và chữ thường</li>
+                                        <li id="req-number">Có chữ số</li>
+                                        <li id="req-symbol">Có ký tự đặc biệt</li>
+                                    </ul>
+                                </div>
+                                @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Xác nhận mật khẩu</label>
-                                <input type="password" name="password_confirmation" class="form-control" required>
+                                <div class="input-group">
+                                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
+                                    <button class="btn btn-outline-secondary toggle-password" type="button" tabindex="-1">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div id="password-match-msg" class="form-text mt-2" style="display: none;"></div>
                             </div>
                         </div>
 
@@ -100,3 +113,169 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    const DEPT_POSITION_MAP = @json(\App\Support\LogisticsOptions::departmentPositionMap());
+    const OLD_POSITION = '{{ old('position') }}';
+    const OLD_DEPARTMENT = '{{ old('department') }}';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const deptSelect = document.getElementById('department');
+        const posSelect = document.getElementById('position');
+        const emailInput = document.querySelector('input[name="email"]');
+        const submitBtn = document.querySelector('button[type="submit"]');
+
+        /** --- Cascading dropdown --- */
+        function populatePositions(department, selectedPosition) {
+            posSelect.innerHTML = '';
+            const positions = DEPT_POSITION_MAP[department] || [];
+            if (positions.length === 0) {
+                posSelect.innerHTML = '<option value="">-- Chọn bộ phận trước --</option>';
+                posSelect.disabled = true;
+                return;
+            }
+            posSelect.disabled = false;
+            posSelect.innerHTML = '<option value="">-- Chọn chức vụ --</option>';
+            positions.forEach(function (pos) {
+                const opt = document.createElement('option');
+                opt.value = pos;
+                opt.textContent = pos;
+                if (pos === selectedPosition) { opt.selected = true; }
+                posSelect.appendChild(opt);
+            });
+        }
+
+        // Init on page load (restore old() values after validation failure)
+        if (OLD_DEPARTMENT) {
+            populatePositions(OLD_DEPARTMENT, OLD_POSITION);
+        } else {
+            posSelect.disabled = true;
+        }
+
+        deptSelect.addEventListener('change', function () {
+            populatePositions(this.value, '');
+        });
+
+        /** --- Email live validation --- */
+        if (emailInput) {
+            emailInput.addEventListener('input', function () {
+                const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                let errorDiv = document.getElementById('js-email-error');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.id = 'js-email-error';
+                    errorDiv.className = 'invalid-feedback';
+                    errorDiv.innerText = 'Email không đúng định dạng (Ví dụ: user@example.com)';
+                    this.parentNode.appendChild(errorDiv);
+                }
+                const isValid = this.value.length === 0 || pattern.test(this.value);
+                this.classList.toggle('is-invalid', !isValid);
+                errorDiv.style.display = isValid ? 'none' : 'block';
+                checkFormValidity();
+            });
+        }
+
+        /** --- Password Real-time Validation & Toggle --- */
+        const pwdInput = document.getElementById('password');
+        const pwdConfInput = document.getElementById('password_confirmation');
+        const pwdReqBox = document.getElementById('password-requirements');
+        const pwdMatchMsg = document.getElementById('password-match-msg');
+        
+        const reqLength = document.getElementById('req-length');
+        const reqMixed = document.getElementById('req-mixed');
+        const reqNumber = document.getElementById('req-number');
+        const reqSymbol = document.getElementById('req-symbol');
+
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+
+        let isPwdValid = false;
+        let isMatchValid = false;
+
+        function checkFormValidity() {
+            if (submitBtn) {
+                // If it's the create form, password is required. 
+                // Wait, we shouldn't strictly disable the button if they haven't typed yet, 
+                // but real-time validation will handle the visual feedback.
+            }
+        }
+
+        if (pwdInput) {
+            pwdInput.addEventListener('input', function() {
+                const val = this.value;
+                if (val.length > 0) {
+                    pwdReqBox.style.display = 'block';
+                } else {
+                    pwdReqBox.style.display = 'none';
+                }
+
+                const hasLength = val.length >= 8;
+                const hasUpper = /[A-Z]/.test(val);
+                const hasLower = /[a-z]/.test(val);
+                const hasNumber = /[0-9]/.test(val);
+                const hasSymbol = /[^A-Za-z0-9]/.test(val);
+                
+                const hasMixed = hasUpper && hasLower;
+
+                // Update UI for requirements
+                reqLength.className = hasLength ? 'text-success' : 'text-danger';
+                reqMixed.className = hasMixed ? 'text-success' : 'text-danger';
+                reqNumber.className = hasNumber ? 'text-success' : 'text-danger';
+                reqSymbol.className = hasSymbol ? 'text-success' : 'text-danger';
+
+                isPwdValid = hasLength && hasMixed && hasNumber && hasSymbol;
+                
+                // Re-trigger confirmation check if there's already some value
+                if (pwdConfInput.value.length > 0) {
+                    pwdConfInput.dispatchEvent(new Event('input'));
+                }
+                checkFormValidity();
+            });
+        }
+
+        if (pwdConfInput) {
+            pwdConfInput.addEventListener('input', function() {
+                const val = this.value;
+                const pwdVal = pwdInput.value;
+                
+                if (val.length === 0) {
+                    pwdMatchMsg.style.display = 'none';
+                    pwdConfInput.classList.remove('is-invalid', 'is-valid');
+                    isMatchValid = false;
+                    return;
+                }
+
+                pwdMatchMsg.style.display = 'block';
+                if (val === pwdVal) {
+                    pwdMatchMsg.className = 'form-text text-success fw-bold';
+                    pwdMatchMsg.innerHTML = '<i class="fa fa-check-circle me-1"></i> Mật khẩu khớp';
+                    pwdConfInput.classList.remove('is-invalid');
+                    pwdConfInput.classList.add('is-valid');
+                    isMatchValid = true;
+                } else {
+                    pwdMatchMsg.className = 'form-text text-danger';
+                    pwdMatchMsg.innerHTML = '<i class="fa fa-times-circle me-1"></i> Mật khẩu không khớp';
+                    pwdConfInput.classList.remove('is-valid');
+                    pwdConfInput.classList.add('is-invalid');
+                    isMatchValid = false;
+                }
+                checkFormValidity();
+            });
+        }
+
+    });
+</script>
+@endpush

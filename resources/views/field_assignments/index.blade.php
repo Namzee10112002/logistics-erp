@@ -36,9 +36,9 @@
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('field-assignments.index') }}" method="GET" class="row g-3">
-        <div class="col-md-9">
+        <!-- <div class="col-md-9">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã phiếu, đơn hàng, nhân viên, vị trí, ghi chú..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <button type="submit" class="btn btn-navy w-100">Tìm kiếm</button>
         </div>

@@ -5,17 +5,15 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Quản lý Nhân viên hiện trường</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#fieldStaffModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM NHÂN VIÊN
-    </button>
+    
     <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('field-staff.index') }}" method="GET" class="row g-3">
-        <div class="col-md-4">
+        <!-- <div class="col-md-4">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã, tên, chứng chỉ, khu vực..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="responsible_location_id" class="form-select border-light">
                 <option value="">Tất cả khu vực</option>
@@ -40,6 +38,12 @@
         <div class="col-md-3"><input type="text" name="full_name" class="form-control border-light" placeholder="Họ tên" value="{{ request('full_name') }}"></div>
         <div class="col-md-3"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#fieldStaffModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM NHÂN VIÊN
+    </button>
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
@@ -128,16 +132,16 @@
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Họ và tên</label>
-                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" required>
+                            <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" required maxlength="100" placeholder="Nhập họ và tên">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Số điện thoại</label>
-                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required>
+                            <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="11" pattern="[0-9]{10,11}" title="Vui lòng nhập 10-11 số" inputmode="numeric" required placeholder="VD: 0912345678">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Ngày sinh</label>
-                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" required>
+                            <label class="form-label fw-semibold">Ngày sinh <span class="text-danger">*</span></label>
+                            <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: 25/05/1990" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" min="1950-01-01" max="{{ now()->subYears(18)->toDateString() }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Tài khoản liên kết</label>
@@ -151,7 +155,7 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Khu vực phụ trách</label>
+                            <label class="form-label fw-semibold">Khu vực phụ trách <span class="text-danger">*</span></label>
                             <select name="responsible_location_id" id="responsible_location_id" class="form-select bg-light border-0" required>
                                 <option value="">Chọn kho/bãi</option>
                                 @foreach($responsibleLocations as $location)
@@ -161,10 +165,10 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Ngày bắt đầu làm việc</label>
-                            <input type="date" name="start_date" id="start_date" class="form-control bg-light border-0">
+                            <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: {{ now()->format('d/m/Y') }}" name="start_date" id="start_date" class="form-control bg-light border-0" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Trạng thái</label>
+                            <label class="form-label fw-semibold">Trạng thái <span class="text-danger">*</span></label>
                             <select name="status" id="status" class="form-select bg-light border-0" required>
                                 <option value="active">Đang làm việc</option>
                                 <option value="inactive">Nghỉ việc</option>
@@ -172,11 +176,11 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Chứng chỉ</label>
-                            <textarea name="certificates" id="certificates" class="form-control bg-light border-0" rows="3" placeholder="VD: Chứng chỉ an toàn kho bãi; nghiệp vụ hải quan..."></textarea>
+                            <textarea name="certificates" id="certificates" class="form-control bg-light border-0" rows="3" placeholder="VD: Chứng chỉ an toàn kho bãi; nghiệp vụ hải quan..." maxlength="500"></textarea>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Ghi chú</label>
-                            <textarea name="note" id="note" class="form-control bg-light border-0" rows="3"></textarea>
+                            <textarea name="note" id="note" class="form-control bg-light border-0" rows="3" maxlength="1000" placeholder="Nhập ghi chú (nếu có)"></textarea>
                         </div>
                     </div>
                 </div>
