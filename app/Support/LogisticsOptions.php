@@ -40,8 +40,24 @@ class LogisticsOptions
     }
 
     /**
-     * @return array<string, string>
+     * Ánh xạ tĩnh: Phòng ban => danh sách chức vụ hợp lệ.
+     *
+     * @return array<string, array<string>>
      */
+    public static function departmentPositionMap(): array
+    {
+        return [
+            'Ban điều hành' => ['Giám đốc vận hành'],
+            'Kinh doanh' => ['Trưởng bộ phận', 'Nhân viên kinh doanh'],
+            'Chứng từ' => ['Trưởng bộ phận', 'Chuyên viên chứng từ'],
+            'Điều vận' => ['Trưởng bộ phận', 'Điều phối vận tải'],
+            'Kế toán' => ['Trưởng bộ phận', 'Kế toán công nợ'],
+            'Hiện trường' => ['Trưởng bộ phận', 'Nhân viên hiện trường'],
+            'Kho bãi' => ['Trưởng bộ phận', 'Giám sát kho'],
+            'Đội xe' => ['Tài xế container'],
+        ];
+    }
+
     public static function provincesNearHaiPhong(): array
     {
         return [

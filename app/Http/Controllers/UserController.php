@@ -8,6 +8,7 @@ use App\Services\ExportService;
 use App\Support\LogisticsOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -83,15 +84,24 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $map = LogisticsOptions::departmentPositionMap();
+        $department = $request->input('department');
+        $validPositions = $map[$department] ?? [];
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role_id' => 'required|exists:roles,id',
-            'position' => 'required|in:'.implode(',', array_keys(LogisticsOptions::positions())),
-            'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
+            'department' => ['required', Rule::in(array_keys($map))],
+            'position' => ['required', Rule::in($validPositions)],
             'date_of_birth' => 'required|date|before:today',
             'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
+        ], [
+            'department.required' => 'Vui lòng chọn bộ phận / phòng ban.',
+            'department.in' => 'Bộ phận không hợp lệ.',
+            'position.required' => 'Vui lòng chọn chức vụ.',
+            'position.in' => 'Chức vụ không hợp lệ đối với phòng ban đã chọn.',
         ]);
 
         // Extra check for DISPATCH
@@ -149,14 +159,23 @@ class UserController extends Controller
             }
         }
 
+        $map = LogisticsOptions::departmentPositionMap();
+        $department = $request->input('department');
+        $validPositions = $map[$department] ?? [];
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'role_id' => 'required|exists:roles,id',
-            'position' => 'required|in:'.implode(',', array_keys(LogisticsOptions::positions())),
-            'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
+            'department' => ['required', Rule::in(array_keys($map))],
+            'position' => ['required', Rule::in($validPositions)],
             'date_of_birth' => 'required|date|before:today',
             'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
+        ], [
+            'department.required' => 'Vui lòng chọn bộ phận / phòng ban.',
+            'department.in' => 'Bộ phận không hợp lệ.',
+            'position.required' => 'Vui lòng chọn chức vụ.',
+            'position.in' => 'Chức vụ không hợp lệ đối với phòng ban đã chọn.',
         ]);
 
         // Extra check for DISPATCH role selection
