@@ -149,6 +149,8 @@ Route::middleware('auth')->group(function () {
         Route::get('debit-notes/{debitNote}', [DebitNoteController::class, 'show'])->name('debit-notes.show');
         Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::post('recurring-expenses', [RecurringExpenseController::class, 'store'])->name('recurring-expenses.store');
+        Route::get('recurring-expenses/{recurringExpense}/edit', [RecurringExpenseController::class, 'edit'])->name('recurring-expenses.edit');
+        Route::put('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'update'])->name('recurring-expenses.update');
         Route::delete('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'destroy'])->name('recurring-expenses.destroy');
     });
 

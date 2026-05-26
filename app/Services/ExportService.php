@@ -19,21 +19,22 @@ class ExportService
     private const DOCX_CONTENT_WIDTH = 15038;
 
     /**
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
+     * @param  list<array{name: string, headers: list<string>, rows: list<list<string|int|float|null>>, footer?: list<string|int|float|null>}>  $sheets
      * @param  array<string, mixed>  $options
      */
-    public function download(string $format, string $title, string $periodLabel, array $headers, array $rows, array $options = []): StreamedResponse
+    public function download(string $format, string $title, string $periodLabel, array $sheets, array $options = []): StreamedResponse
     {
         $normalizedFormat = $this->normalizeFormat($format);
         $filename = Str::slug(Str::ascii($title)).'-'.now()->format('Ymd-His').'.'.$normalizedFormat;
-        $context = $this->exportContext($normalizedFormat, $title, $periodLabel, $rows, $options);
+
+        $totalRows = array_sum(array_map(fn ($sheet) => count($sheet['rows']), $sheets));
+        $context = $this->exportContext($normalizedFormat, $title, $periodLabel, $totalRows, $options);
 
         return match ($normalizedFormat) {
-            'csv' => $this->downloadCsv($filename, $context, $headers, $rows),
-            'xlsx' => $this->downloadBinary($filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $this->buildXlsx($context, $headers, $rows)),
-            'docx' => $this->downloadBinary($filename, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $this->buildDocx($context, $headers, $rows)),
-            'pdf' => $this->downloadBinary($filename, 'application/pdf', $this->buildPdf($context, $headers, $rows)),
+            'csv' => $this->downloadCsv($filename, $context, $sheets),
+            'xlsx' => $this->downloadBinary($filename, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', $this->buildXlsx($context, $sheets)),
+            'docx' => $this->downloadBinary($filename, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $this->buildDocx($context, $sheets)),
+            'pdf' => $this->downloadBinary($filename, 'application/pdf', $this->buildPdf($context, $sheets)),
         };
     }
 
@@ -48,16 +49,15 @@ class ExportService
     }
 
     /**
-     * @param  list<list<string|int|float|null>>  $rows
      * @param  array<string, mixed>  $options
      * @return array<string, string|int>
      */
-    private function exportContext(string $format, string $title, string $periodLabel, array $rows, array $options): array
+    private function exportContext(string $format, string $title, string $periodLabel, int $rowCount, array $options): array
     {
         $companyName = $this->companyName();
         $contactLine = $this->companyContactLine();
         $exporter = auth()->user()?->name ?? 'Hệ thống';
-        $content = (string) ($options['content'] ?? $this->contentLine($title, $periodLabel, count($rows)));
+        $content = (string) ($options['content'] ?? $this->contentLine($title, $periodLabel, $rowCount));
 
         return [
             'format' => $format,
@@ -66,11 +66,15 @@ class ExportService
             'period' => $periodLabel,
             'content' => $content,
             'company_name' => $companyName,
+            'company_address' => $this->setting('company.address', 'Số 235 Phương Lưu, Đông Hải, Hải Phòng, Vietnam'),
+            'company_phone' => $this->setting('company.phone', '0989551583'),
+            'company_email' => $this->setting('company.email', 'ductam8390@gmail.com'),
+            'company_contact_person' => $this->setting('company.contact_person', 'Kế toán - Phạm Thuỳ Ngân'),
             'contact_line' => $contactLine,
             'exporter' => $exporter,
             'issued_place_date' => 'Hải Phòng, ngày '.now()->format('d').' tháng '.now()->format('m').' năm '.now()->format('Y'),
-            'footer' => 'Nhân viên đang đăng nhập: '.$exporter,
-            'row_count' => count($rows),
+            'footer' => 'Nhân viên xuất file: '.$exporter,
+            'row_count' => $rowCount,
         ];
     }
 
@@ -117,14 +121,9 @@ class ExportService
         return "Nội dung báo cáo: {$title} - {$periodLabel} - {$rowCount} dòng dữ liệu.";
     }
 
-    /**
-     * @param  array<string, string|int>  $context
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     */
-    private function downloadCsv(string $filename, array $context, array $headers, array $rows): StreamedResponse
+    private function downloadCsv(string $filename, array $context, array $sheets): StreamedResponse
     {
-        return Response::streamDownload(function () use ($context, $headers, $rows): void {
+        return Response::streamDownload(function () use ($context, $sheets): void {
             $file = fopen('php://output', 'w');
             fwrite($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
@@ -132,14 +131,28 @@ class ExportService
             fputcsv($file, ['Liên hệ', $context['contact_line']]);
             fputcsv($file, ['Báo cáo', $context['title']]);
             fputcsv($file, ['Kỳ dữ liệu', $context['period']]);
-            fputcsv($file, ['Người xuất', $context['exporter']]);
-            fputcsv($file, ['Số dòng', $context['row_count']]);
             fputcsv($file, []);
-            fputcsv($file, $headers);
 
-            foreach ($rows as $row) {
-                fputcsv($file, $row);
+            foreach ($sheets as $index => $sheet) {
+                if ($index > 0) {
+                    fputcsv($file, []);
+                    fputcsv($file, []);
+                }
+
+                fputcsv($file, ['--- '.mb_strtoupper($sheet['name']).' ---']);
+                fputcsv($file, $sheet['headers']);
+
+                foreach ($sheet['rows'] as $row) {
+                    fputcsv($file, $row);
+                }
+
+                if (isset($sheet['footer'])) {
+                    fputcsv($file, $sheet['footer']);
+                }
             }
+
+            fputcsv($file, []);
+            fputcsv($file, ['', '', '', '', 'Người xuất', $context['exporter']]);
 
             fclose($file);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
@@ -152,27 +165,101 @@ class ExportService
         }, $filename, ['Content-Type' => $contentType]);
     }
 
-    /**
-     * @param  array<string, string|int>  $context
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     */
-    private function buildXlsx(array $context, array $headers, array $rows): string
+    private function buildXlsx(array $context, array $sheets): string
     {
+        $files = [
+            'xl/styles.xml' => $this->xlsxStylesXml(),
+        ];
+
+        $logoBytes = $this->logoBytes();
+        $sheetElements = '';
+        $sheetRels = '';
+        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+
+        if ($logoBytes) {
+            $files['xl/media/image1.jpg'] = $logoBytes;
+            $contentTypes .= '<Default Extension="jpg" ContentType="image/jpeg"/>';
+        }
+
+        foreach ($sheets as $index => $sheet) {
+            $sheetId = $index + 1;
+            $rId = 'rIdSheet'.$sheetId;
+            $sheetName = $this->xml(Str::limit($sheet['name'], 30, ''));
+
+            $sheetElements .= '<sheet name="'.$sheetName.'" sheetId="'.$sheetId.'" r:id="'.$rId.'"/>';
+            $sheetRels .= '<Relationship Id="'.$rId.'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'.$sheetId.'.xml"/>';
+            $contentTypes .= '<Override PartName="/xl/worksheets/sheet'.$sheetId.'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+
+            $dataColumnCount = max(1, count($sheet['headers']));
+            $layoutColumnCount = max(6, $dataColumnCount);
+
+            if ($logoBytes) {
+                $drawingXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                    .'<xdr:twoCellAnchor editAs="oneCell">'
+                    .'<xdr:from><xdr:col>'.max(1, $layoutColumnCount - 3).'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>'
+                    .'<xdr:to><xdr:col>'.$layoutColumnCount.'</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>5</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>'
+                    .'<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="1" name="Logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+                    .'<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+                    .'<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>'
+                    .'<xdr:clientData/>'
+                    .'</xdr:twoCellAnchor>'
+                    .'</xdr:wsDr>';
+
+                $files["xl/drawings/drawing{$sheetId}.xml"] = $drawingXml;
+                $files["xl/drawings/_rels/drawing{$sheetId}.xml.rels"] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.jpg"/>'
+                    .'</Relationships>';
+
+                $files["xl/worksheets/_rels/sheet{$sheetId}.xml.rels"] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    .'<Relationship Id="rIdDrawing" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing'.$sheetId.'.xml"/>'
+                    .'</Relationships>';
+
+                $contentTypes .= '<Override PartName="/xl/drawings/drawing'.$sheetId.'.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
+            }
+
+            $files['xl/worksheets/sheet'.$sheetId.'.xml'] = $this->buildXlsxSheetXml($context, $sheet, $logoBytes !== null);
+        }
+
+        $contentTypes .= '</Types>';
+        $files['[Content_Types].xml'] = $contentTypes;
+
+        $files['_rels/.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdWorkbook" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rIdCore" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rIdApp" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>';
+
+        $files['xl/workbook.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>'.$sheetElements.'</sheets></workbook>';
+
+        $files['xl/_rels/workbook.xml.rels'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'.$sheetRels.'<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+
+        $createdAt = now()->toAtomString();
+        $files['docProps/core.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'.$this->xml((string) $context['title']).'</dc:title><dc:creator>'.$this->xml((string) $context['exporter']).'</dc:creator><cp:lastModifiedBy>'.$this->xml((string) $context['exporter']).'</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:modified></cp:coreProperties>';
+        $files['docProps/app.xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nguyen Tam Logistics</Application></Properties>';
+
+        return $this->zip($files);
+    }
+
+    private function buildXlsxSheetXml(array $context, array $sheet, bool $hasLogo): string
+    {
+        $headers = $sheet['headers'];
+        $rows = $sheet['rows'];
+        $footer = $sheet['footer'] ?? null;
+
         $dataColumnCount = max(1, count($headers));
         $layoutColumnCount = max(6, $dataColumnCount);
         $lastColumn = $this->columnName($layoutColumnCount);
         $tableLastColumn = $this->columnName($dataColumnCount);
-        $headerRow = 7;
+        $headerRow = 8;
         $dataStartRow = $headerRow + 1;
 
         $sheetRows = [
             1 => [$context['company_name']],
-            2 => [$context['contact_line']],
-            3 => [$context['title_upper']],
-            4 => [$context['content']],
-            5 => ['Kỳ dữ liệu', $context['period'], 'Người xuất', $context['exporter'], 'Số dòng', $context['row_count']],
-            6 => [],
+            2 => ['Địa chỉ: '.$context['company_address']],
+            3 => ['SĐT: '.$context['company_phone']],
+            4 => ['Email: '.$context['company_email']],
+            5 => ['Liên hệ: '.$context['company_contact_person']],
+            6 => [Str::upper($sheet['name'])], // Hoặc $context['title_upper']
+            7 => [],
             $headerRow => $headers,
         ];
 
@@ -180,15 +267,31 @@ class ExportService
             $sheetRows[$dataStartRow + $index] = $row;
         }
 
+        $dataEndRow = $dataStartRow + count($rows) - 1;
+
+        if ($footer) {
+            $dataEndRow++;
+            $sheetRows[$dataEndRow] = $footer;
+        }
+
+        $footerRow1 = $dataEndRow + 2;
+        $footerRow2 = $dataEndRow + 3;
+
+        $emptyCells = array_fill(0, max(0, $layoutColumnCount - 3), '');
+        $sheetRows[$footerRow1] = array_merge($emptyCells, [$context['issued_place_date']]);
+        $sheetRows[$footerRow2] = array_merge($emptyCells, [$context['footer']]);
+
         $sheetData = collect($sheetRows)
             ->sortKeys()
-            ->map(function (array $row, int $rowIndex) use ($headerRow, $dataStartRow): string {
+            ->map(function (array $row, int $rowIndex) use ($headerRow, $dataStartRow, $dataEndRow, $footerRow1, $footerRow2, $footer): string {
                 $style = match (true) {
-                    $rowIndex === 1 => 1,
-                    in_array($rowIndex, [2, 3, 4], true) => 2,
-                    $rowIndex === 5 => 5,
+                    $rowIndex === 1 => 6,
+                    in_array($rowIndex, [2, 3, 4, 5], true) => 0,
+                    $rowIndex === 6 => 2,
                     $rowIndex === $headerRow => 3,
-                    $rowIndex >= $dataStartRow => 4,
+                    $footer && $rowIndex === $dataEndRow => 3, // bold for footer row
+                    $rowIndex >= $dataStartRow && $rowIndex <= $dataEndRow => 4,
+                    $rowIndex === $footerRow1 || $rowIndex === $footerRow2 => 5,
                     default => 0,
                 };
 
@@ -197,38 +300,30 @@ class ExportService
             ->implode('');
 
         $mergeCells = [
-            "A1:{$lastColumn}1",
-            "A2:{$lastColumn}2",
-            "A3:{$lastColumn}3",
-            "A4:{$lastColumn}4",
+            'A1:C1',
+            "A6:{$lastColumn}6",
         ];
+
+        if ($layoutColumnCount >= 3) {
+            $footerStartCol = $this->columnName($layoutColumnCount - 2);
+            $mergeCells[] = "{$footerStartCol}{$footerRow1}:{$lastColumn}{$footerRow1}";
+            $mergeCells[] = "{$footerStartCol}{$footerRow2}:{$lastColumn}{$footerRow2}";
+        }
 
         $mergeXml = '<mergeCells count="'.count($mergeCells).'">'.collect($mergeCells)
             ->map(fn (string $ref): string => '<mergeCell ref="'.$ref.'"/>')
             ->implode('').'</mergeCells>';
+
         $autoFilterRef = 'A'.$headerRow.':'.$tableLastColumn.max($headerRow, $dataStartRow + count($rows) - 1);
         $columnsXml = collect($this->xlsxColumnWidths($headers, $rows, $layoutColumnCount))
             ->map(fn (float $width, int $index): string => '<col min="'.($index + 1).'" max="'.($index + 1).'" width="'.$width.'" customWidth="1"/>')
             ->implode('');
-        $createdAt = now()->toAtomString();
 
-        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>';
+        $drawingXml = $hasLogo ? '<drawing r:id="rIdDrawing"/>' : '';
 
-        return $this->zip([
-            '[Content_Types].xml' => $contentTypes,
-            '_rels/.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdWorkbook" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rIdCore" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rIdApp" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>',
-            'docProps/core.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>'.$this->xml((string) $context['title']).'</dc:title><dc:creator>'.$this->xml((string) $context['exporter']).'</dc:creator><cp:lastModifiedBy>'.$this->xml((string) $context['exporter']).'</cp:lastModifiedBy><dcterms:created xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">'.$createdAt.'</dcterms:modified></cp:coreProperties>',
-            'docProps/app.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Nguyen Tam Logistics</Application></Properties>',
-            'xl/workbook.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Bao cao" sheetId="1" r:id="rIdSheet1"/></sheets></workbook>',
-            'xl/_rels/workbook.xml.rels' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdSheet1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
-            'xl/styles.xml' => $this->xlsxStylesXml(),
-            'xl/worksheets/sheet1.xml' => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData><autoFilter ref="'.$autoFilterRef.'"/>'.$mergeXml.'</worksheet>',
-        ]);
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="8" topLeftCell="A9" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>'.$columnsXml.'</cols><sheetData>'.$sheetData.'</sheetData><autoFilter ref="'.$autoFilterRef.'"/>'.$mergeXml.$drawingXml.'</worksheet>';
     }
 
-    /**
-     * @param  list<string|int|float|null>  $row
-     */
     private function xlsxRow(int $rowIndex, array $row, int $style): string
     {
         $cells = collect($row)
@@ -245,11 +340,6 @@ class ExportService
         return sprintf('<row r="%d">%s</row>', $rowIndex, $cells);
     }
 
-    /**
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     * @return list<float>
-     */
     private function xlsxColumnWidths(array $headers, array $rows, int $layoutColumnCount): array
     {
         $widths = [];
@@ -271,30 +361,25 @@ class ExportService
     {
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            .'<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="15"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts>'
+            .'<fonts count="5"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="18"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="16"/><name val="Calibri"/></font></fonts>'
             .'<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1A237E"/><bgColor indexed="64"/></patternFill></fill></fills>'
             .'<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"/><right style="thin"/><top style="thin"/><bottom style="thin"/><diagonal/></border></borders>'
             .'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            .'<cellXfs count="6">'
+            .'<cellXfs count="7">'
             .'<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             .'<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>'
             .'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             .'<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
             .'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>'
             .'<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'
+            .'<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>'
             .'</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
     }
 
-    /**
-     * @param  array<string, string|int>  $context
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     */
-    private function buildDocx(array $context, array $headers, array $rows): string
+    private function buildDocx(array $context, array $sheets): string
     {
         $logoBytes = $this->logoBytes();
         $headerColumnWidths = [11200, self::DOCX_CONTENT_WIDTH - 11200];
-        $tableColumnWidths = $this->docxColumnWidths($headers, $rows);
         $leftHeader = $this->docxParagraph((string) $context['company_name'], true, 'left', false, 24);
         $rightHeader = '';
 
@@ -306,10 +391,23 @@ class ExportService
 
         $rightHeader .= $this->docxParagraph((string) $context['company_name'], true, 'right', false, 18);
 
-        $tableRows = $this->docxTableRow($headers, true, $tableColumnWidths);
+        $tablesContent = '';
 
-        foreach ($rows as $row) {
-            $tableRows .= $this->docxTableRow($row, false, $tableColumnWidths);
+        foreach ($sheets as $sheet) {
+            $tablesContent .= $this->docxParagraph(mb_strtoupper($sheet['name']), true, 'left', false, 24, '1A237E');
+            $tableColumnWidths = $this->docxColumnWidths($sheet['headers'], $sheet['rows']);
+            $tableRows = $this->docxTableRow($sheet['headers'], true, $tableColumnWidths);
+
+            foreach ($sheet['rows'] as $row) {
+                $tableRows .= $this->docxTableRow($row, false, $tableColumnWidths);
+            }
+
+            if (isset($sheet['footer'])) {
+                $tableRows .= $this->docxTableRow($sheet['footer'], true, $tableColumnWidths);
+            }
+
+            $tablesContent .= $this->docxTable($tableRows, true, self::DOCX_CONTENT_WIDTH, $tableColumnWidths);
+            $tablesContent .= $this->docxParagraph('', false, 'left', false, 12);
         }
 
         $document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -327,7 +425,8 @@ class ExportService
             .$this->docxParagraph((string) $context['contact_line'], false, 'center', false, 18, '475569')
             .$this->docxParagraph((string) $context['title_upper'], true, 'center', false, 32)
             .$this->docxParagraph((string) $context['content'], true, 'center')
-            .$this->docxTable($tableRows, true, self::DOCX_CONTENT_WIDTH, $tableColumnWidths)
+            .$this->docxParagraph('', false, 'left', false, 12)
+            .$tablesContent
             .$this->docxParagraph((string) $context['issued_place_date'], false, 'right')
             .$this->docxParagraph('Nhân viên xuất', true, 'right')
             .$this->docxParagraph((string) $context['footer'], true, 'center')
@@ -348,21 +447,11 @@ class ExportService
         return $this->zip($files);
     }
 
-    /**
-     * @param  array<string, string|int>  $context
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     */
-    private function buildPdf(array $context, array $headers, array $rows): string
+    private function buildPdf(array $context, array $sheets): string
     {
         $logoBytes = $this->logoBytes();
         $logoInfo = $this->logoInfo();
         $rowsPerPage = 18;
-        $rowChunks = array_chunk($rows, $rowsPerPage);
-
-        if ($rowChunks === []) {
-            $rowChunks = [[]];
-        }
 
         $objects = [
             1 => '<< /Type /Catalog /Pages 2 0 R >>',
@@ -377,15 +466,34 @@ class ExportService
         }
 
         $pageReferences = [];
+        $totalPages = 0;
 
-        foreach ($rowChunks as $pageIndex => $chunk) {
-            $content = $this->pdfPageContent($context, $headers, $chunk, $pageIndex + 1, count($rowChunks), $imageObjectId !== null);
-            $contentObjectId = count($objects) + 1;
-            $objects[$contentObjectId] = '<< /Length '.strlen($content)." >>\nstream\n{$content}\nendstream";
-            $pageObjectId = count($objects) + 1;
-            $resources = '<< /Font << /F1 3 0 R >>'.($imageObjectId !== null ? ' /XObject << /ImLogo '.$imageObjectId.' 0 R >>' : '').' >>';
-            $objects[$pageObjectId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources '.$resources.' /Contents '.$contentObjectId.' 0 R >>';
-            $pageReferences[] = $pageObjectId.' 0 R';
+        foreach ($sheets as $sheet) {
+            $rowCount = count($sheet['rows']) + (isset($sheet['footer']) ? 1 : 0);
+            $totalPages += max(1, ceil($rowCount / $rowsPerPage));
+        }
+
+        $currentPage = 1;
+        foreach ($sheets as $sheet) {
+            $rowsToRender = $sheet['rows'];
+            if (isset($sheet['footer'])) {
+                $rowsToRender[] = $sheet['footer'];
+            }
+
+            $rowChunks = array_chunk($rowsToRender, $rowsPerPage);
+            if ($rowChunks === []) {
+                $rowChunks = [[]];
+            }
+
+            foreach ($rowChunks as $chunk) {
+                $content = $this->pdfPageContent($context, $sheet['name'], $sheet['headers'], $chunk, $currentPage++, $totalPages, $imageObjectId !== null);
+                $contentObjectId = count($objects) + 1;
+                $objects[$contentObjectId] = '<< /Length '.strlen($content)." >>\nstream\n{$content}\nendstream";
+                $pageObjectId = count($objects) + 1;
+                $resources = '<< /Font << /F1 3 0 R >>'.($imageObjectId !== null ? ' /XObject << /ImLogo '.$imageObjectId.' 0 R >>' : '').' >>';
+                $objects[$pageObjectId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources '.$resources.' /Contents '.$contentObjectId.' 0 R >>';
+                $pageReferences[] = $pageObjectId.' 0 R';
+            }
         }
 
         $objects[2] = '<< /Type /Pages /Kids ['.implode(' ', $pageReferences).'] /Count '.count($pageReferences).' >>';
@@ -393,12 +501,7 @@ class ExportService
         return $this->pdfDocument($objects);
     }
 
-    /**
-     * @param  array<string, string|int>  $context
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     */
-    private function pdfPageContent(array $context, array $headers, array $rows, int $page, int $totalPages, bool $hasLogo): string
+    private function pdfPageContent(array $context, string $sheetName, array $headers, array $rows, int $page, int $totalPages, bool $hasLogo): string
     {
         $content = '';
 
@@ -418,7 +521,7 @@ class ExportService
         $content .= $this->pdfCenteredText(421, 512, $this->pdfLimit($this->ascii((string) $context['contact_line']), 560), 8, '0.10 0.14 0.24');
         $content .= $this->pdfCenteredText(421, 480, $this->ascii((string) $context['title_upper']), 16, '0.10 0.14 0.49');
         $content .= "0.03 0.64 0.62 rg\n335 469 172 2 re f\n";
-        $content .= $this->pdfCenteredText(421, 452, $this->pdfLimit($this->ascii((string) $context['content']), 500), 10, '0.19 0.22 0.30');
+        $content .= $this->pdfCenteredText(421, 452, $this->pdfLimit($this->ascii(mb_strtoupper($sheetName)), 500), 12, '0.19 0.22 0.30');
 
         $tableTop = 424;
         $left = 35;
@@ -471,9 +574,6 @@ class ExportService
         return $content;
     }
 
-    /**
-     * @param  array<int, string>  $objects
-     */
     private function pdfDocument(array $objects): string
     {
         ksort($objects);
@@ -498,9 +598,6 @@ class ExportService
         return $pdf."trailer\n<< /Size {$size} /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
     }
 
-    /**
-     * @param  array<string, string>  $files
-     */
     private function zip(array $files): string
     {
         $path = tempnam(sys_get_temp_dir(), 'export-');
@@ -531,9 +628,6 @@ class ExportService
         return $contents === false ? null : $contents;
     }
 
-    /**
-     * @return array{width:int,height:int}|null
-     */
     private function logoInfo(): ?array
     {
         $path = public_path(self::LOGO_PATH);
@@ -574,9 +668,6 @@ class ExportService
         return '<w:p><w:pPr><w:jc w:val="'.$align.'"/></w:pPr>'.$text.'</w:p>';
     }
 
-    /**
-     * @param  list<int>|null  $columnWidths
-     */
     private function docxTable(string $rows, bool $bordered, int $width = self::DOCX_CONTENT_WIDTH, ?array $columnWidths = null): string
     {
         $borders = $bordered
@@ -589,11 +680,6 @@ class ExportService
         return '<w:tbl><w:tblPr><w:tblW w:w="'.$width.'" w:type="dxa"/><w:tblLayout w:type="fixed"/>'.$borders.'<w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>'.$grid.$rows.'</w:tbl>';
     }
 
-    /**
-     * @param  list<string>  $headers
-     * @param  list<list<string|int|float|null>>  $rows
-     * @return list<int>
-     */
     private function docxColumnWidths(array $headers, array $rows): array
     {
         $columnCount = max(1, count($headers));
@@ -632,10 +718,6 @@ class ExportService
         return $widths;
     }
 
-    /**
-     * @param  list<string|int|float|null>  $row
-     * @param  list<int>|null  $columnWidths
-     */
     private function docxTableRow(array $row, bool $bold = false, ?array $columnWidths = null): string
     {
         $columnCount = max(1, count($row), count($columnWidths ?? []));
@@ -653,10 +735,6 @@ class ExportService
             ->implode('').'</w:tr>';
     }
 
-    /**
-     * @param  list<string>  $cells
-     * @param  list<int>  $columnWidths
-     */
     private function docxRawRow(array $cells, array $columnWidths): string
     {
         return '<w:tr>'.collect($cells)
