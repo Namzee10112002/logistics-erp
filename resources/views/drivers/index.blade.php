@@ -13,9 +13,9 @@
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('drivers.index') }}" method="GET" class="row g-3">
-        <div class="col-md-5">
+        <!-- <div class="col-md-5">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã tài xế, tên, GPLX, cấp bậc..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="rank" class="form-select border-light">
                 <option value="">Cấp bậc</option>

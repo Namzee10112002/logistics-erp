@@ -5,17 +5,14 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Quản lý Biểu giá Dịch vụ</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#priceModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM BIỂU GIÁ
-    </button>
     <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('service-prices.index') }}" method="GET" class="row g-3">
-        <div class="col-md-7">
+        <!-- <div class="col-md-7">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã gói, tên dịch vụ, đơn vị..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="is_tax_included" class="form-select border-light">
                 <option value="">Tất cả thuế</option>
@@ -37,6 +34,12 @@
             </select>
         </div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#priceModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM BIỂU GIÁ
+    </button>
 </div>
 
 <!-- Data Table -->
@@ -106,10 +109,10 @@
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-3">
-                        <div class="col-md-12">
+                        <!-- <div class="col-md-12">
                             <label class="form-label fw-semibold">Mã gói</label>
                             <input type="text" id="package_code" class="form-control bg-light border-0" placeholder="Tự sinh khi lưu" disabled>
-                        </div>
+                        </div> -->
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Tên Dịch Vụ</label>
                             <input type="text" name="service_name" id="service_name" class="form-control bg-light border-0" placeholder="VD: Vận chuyển Cont 20'..." required>
@@ -124,7 +127,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Đơn Giá (VNĐ)</label>
-                            <input type="number" name="unit_price" id="unit_price" class="form-control bg-light border-0" required>
+                            <input type="number" name="unit_price" id="unit_price" class="form-control bg-light border-0" min="1000" required>
                         </div>
                         <div class="col-md-12">
                             <div class="form-check form-switch">

@@ -5,20 +5,16 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Danh sách Đơn hàng (Jobs)</h4>
-    @if(Auth::user()->hasRole(['ADMIN', 'SALES']))
-    <a href="{{ route('shipping-jobs.create') }}" class="btn btn-navy px-4 fw-bold">
-        <i class="fa fa-plus me-2"></i> TẠO ĐƠN HÀNG MỚI
-    </a>
-    @endif
+    
     <x-export-buttons />
 </div>
 
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('shipping-jobs.index') }}" method="GET" class="row g-3">
-        <div class="col-lg-4 col-md-6">
+        <!-- <div class="col-lg-4 col-md-6">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo Mã Job, Số Cont, Tên khách hàng..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-lg-2 col-md-6">
             <select name="customer_id" class="form-select border-light">
                 <option value="">Tất cả khách hàng</option>
@@ -57,6 +53,14 @@
         <div class="col-md-2"><input type="text" name="cargo_type" class="form-control border-light" placeholder="Hàng hóa" value="{{ request('cargo_type') }}"></div>
         <div class="col-md-2"><input type="text" name="container_type" class="form-control border-light" placeholder="Loại cont" value="{{ request('container_type') }}"></div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    @if(Auth::user()->hasRole(['ADMIN', 'SALES']))
+    <a href="{{ route('shipping-jobs.create') }}" class="btn btn-navy px-4 fw-bold">
+        <i class="fa fa-plus me-2"></i> TẠO ĐƠN HÀNG MỚI
+    </a>
+    @endif
 </div>
 
 <!-- Data Table -->

@@ -60,12 +60,10 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-bold">Người liên hệ</label>
-                <select name="contact_person" class="form-select">
-                    <option value="">Chọn người liên hệ</option>
-                    @foreach(\App\Support\LogisticsOptions::customerContactRoles() as $value => $label)
-                        <option value="{{ $value }}" {{ old('contact_person', $customer->contact_person) === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <input type="text" name="contact_person" class="form-control @error('contact_person') is-invalid @enderror" value="{{ old('contact_person', $customer->contact_person) }}" placeholder="Nhập tên người liên hệ">
+                @error('contact_person')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
             </div>
 
             <div class="col-12 mt-5">

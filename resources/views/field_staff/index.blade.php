@@ -13,9 +13,9 @@
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('field-staff.index') }}" method="GET" class="row g-3">
-        <div class="col-md-4">
+        <!-- <div class="col-md-4">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã, tên, chứng chỉ, khu vực..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="responsible_location_id" class="form-select border-light">
                 <option value="">Tất cả khu vực</option>

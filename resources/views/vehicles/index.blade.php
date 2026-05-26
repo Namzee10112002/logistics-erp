@@ -13,9 +13,9 @@
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
     <form action="{{ route('vehicles.index') }}" method="GET" class="row g-3">
-        <div class="col-md-7">
+        <!-- <div class="col-md-7">
             <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo biển số, loại xe..." value="{{ request('search') }}">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <select name="status" class="form-select border-light">
                 <option value="">Tất cả trạng thái</option>
