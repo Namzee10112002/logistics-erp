@@ -24,6 +24,19 @@ class ExportService
      */
     public function download(string $format, string $title, string $periodLabel, array $sheets, array $options = []): StreamedResponse
     {
+        // Backward compatibility: If $sheets is an array of strings (headers), 
+        // it means the caller passed $headers as 4th param and $rows as 5th param.
+        if (isset($sheets[0]) && is_string($sheets[0])) {
+            $sheets = [
+                [
+                    'name' => 'Dữ liệu',
+                    'headers' => $sheets,
+                    'rows' => $options,
+                ],
+            ];
+            $options = [];
+        }
+
         $normalizedFormat = $this->normalizeFormat($format);
         $filename = Str::slug(Str::ascii($title)).'-'.now()->format('Ymd-His').'.'.$normalizedFormat;
 

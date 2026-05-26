@@ -275,6 +275,19 @@
             });
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Change empty date inputs to text inputs to show custom placeholder
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                if (!input.value) {
+                    input.type = 'text';
+                    input.placeholder = 'Ngày/Tháng/Năm';
+                }
+                input.addEventListener('focus', function() { this.type = 'date'; this.showPicker && this.showPicker(); });
+                input.addEventListener('blur', function() { if (!this.value) this.type = 'text'; });
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>

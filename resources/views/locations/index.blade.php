@@ -5,9 +5,7 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Danh mục Địa điểm (Kho/Cảng/Bãi)</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#locationModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM ĐỊA ĐIỂM
-    </button>
+    
     <x-export-buttons />
 </div>
 
@@ -34,6 +32,12 @@
         </div>
         <div class="col-md-1"><button type="submit" class="btn btn-navy w-100">Lọc</button></div>
     </form>
+</div>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#locationModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM ĐỊA ĐIỂM
+    </button>
 </div>
 
 <!-- Data Table -->
@@ -127,10 +131,10 @@
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <!-- <div class="col-md-4">
                             <label class="form-label fw-semibold">Mã địa điểm</label>
                             <input type="text" id="location_code" class="form-control bg-light border-0" value="Tự sinh theo loại" disabled>
-                        </div>
+                        </div> -->
                         <div class="col-md-8">
                             <label class="form-label fw-semibold">Tên Địa Điểm</label>
                             <input type="text" name="location_name" id="location_name" class="form-control bg-light border-0" required>
