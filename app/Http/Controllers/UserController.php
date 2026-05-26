@@ -97,11 +97,16 @@ class UserController extends Controller
             'position' => ['required', Rule::in($validPositions)],
             'date_of_birth' => 'required|date|before:today',
             'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
-        ], [
             'department.required' => 'Vui lòng chọn bộ phận / phòng ban.',
             'department.in' => 'Bộ phận không hợp lệ.',
             'position.required' => 'Vui lòng chọn chức vụ.',
             'position.in' => 'Chức vụ không hợp lệ đối với phòng ban đã chọn.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'password.mixed' => 'Mật khẩu phải chứa cả chữ hoa và chữ thường.',
+            'password.numbers' => 'Mật khẩu phải chứa ít nhất một chữ số.',
+            'password.symbols' => 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt.',
         ]);
 
         // Extra check for DISPATCH
@@ -198,7 +203,16 @@ class UserController extends Controller
         ]);
 
         if ($request->filled('password')) {
-            $request->validate(['password' => ['confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]]);
+            $request->validate(
+                ['password' => ['confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]],
+                [
+                    'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+                    'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+                    'password.mixed' => 'Mật khẩu phải chứa cả chữ hoa và chữ thường.',
+                    'password.numbers' => 'Mật khẩu phải chứa ít nhất một chữ số.',
+                    'password.symbols' => 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt.',
+                ]
+            );
             $user->update(['password' => Hash::make($request->password)]);
         }
 

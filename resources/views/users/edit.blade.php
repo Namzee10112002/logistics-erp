@@ -83,12 +83,31 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold">Mật khẩu mới</label>
-                                    <input type="password" name="password" class="form-control form-control-sm @error('password') is-invalid @enderror">
-                                    <div class="form-text">Có chữ hoa, chữ thường, chữ số và ký tự đặc biệt.</div>
+                                    <div class="input-group input-group-sm">
+                                        <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" tabindex="-1">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div id="password-requirements" class="form-text text-danger mt-2" style="display: none;">
+                                        <ul class="mb-0 ps-3">
+                                            <li id="req-length">Tối thiểu 8 ký tự</li>
+                                            <li id="req-mixed">Có chữ hoa và chữ thường</li>
+                                            <li id="req-number">Có chữ số</li>
+                                            <li id="req-symbol">Có ký tự đặc biệt</li>
+                                        </ul>
+                                    </div>
+                                    @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold">Xác nhận mật khẩu</label>
-                                    <input type="password" name="password_confirmation" class="form-control form-control-sm">
+                                    <div class="input-group input-group-sm">
+                                        <input type="password" id="password_confirmation" name="password_confirmation" class="form-control">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" tabindex="-1">
+                                            <i class="fa fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div id="password-match-msg" class="form-text mt-2" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
@@ -162,12 +181,117 @@
                 const isValid = this.value.length === 0 || pattern.test(this.value);
                 this.classList.toggle('is-invalid', !isValid);
                 errorDiv.style.display = isValid ? 'none' : 'block';
-                if (submitBtn) { submitBtn.disabled = !isValid; }
+                checkFormValidity();
             });
 
             // Trigger on load in case editing mode dispatchEvent
             emailInput.dispatchEvent(new Event('input'));
         }
+
+        /** --- Password Real-time Validation & Toggle --- */
+        const pwdInput = document.getElementById('password');
+        const pwdConfInput = document.getElementById('password_confirmation');
+        const pwdReqBox = document.getElementById('password-requirements');
+        const pwdMatchMsg = document.getElementById('password-match-msg');
+        
+        const reqLength = document.getElementById('req-length');
+        const reqMixed = document.getElementById('req-mixed');
+        const reqNumber = document.getElementById('req-number');
+        const reqSymbol = document.getElementById('req-symbol');
+
+        // Toggle password visibility
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+
+        let isPwdValid = false;
+        let isMatchValid = false;
+
+        function checkFormValidity() {
+            if (submitBtn) {
+                // Not strictly disabling button to allow other edits
+            }
+        }
+
+        if (pwdInput) {
+            pwdInput.addEventListener('input', function() {
+                const val = this.value;
+                if (val.length > 0) {
+                    pwdReqBox.style.display = 'block';
+                } else {
+                    pwdReqBox.style.display = 'none';
+                    // clear confirmation
+                    if (pwdConfInput) {
+                        pwdConfInput.value = '';
+                        pwdMatchMsg.style.display = 'none';
+                        pwdConfInput.classList.remove('is-invalid', 'is-valid');
+                    }
+                }
+
+                const hasLength = val.length >= 8;
+                const hasUpper = /[A-Z]/.test(val);
+                const hasLower = /[a-z]/.test(val);
+                const hasNumber = /[0-9]/.test(val);
+                const hasSymbol = /[^A-Za-z0-9]/.test(val);
+                
+                const hasMixed = hasUpper && hasLower;
+
+                // Update UI for requirements
+                reqLength.className = hasLength ? 'text-success' : 'text-danger';
+                reqMixed.className = hasMixed ? 'text-success' : 'text-danger';
+                reqNumber.className = hasNumber ? 'text-success' : 'text-danger';
+                reqSymbol.className = hasSymbol ? 'text-success' : 'text-danger';
+
+                isPwdValid = hasLength && hasMixed && hasNumber && hasSymbol;
+                
+                // Re-trigger confirmation check if there's already some value
+                if (pwdConfInput && pwdConfInput.value.length > 0) {
+                    pwdConfInput.dispatchEvent(new Event('input'));
+                }
+                checkFormValidity();
+            });
+        }
+
+        if (pwdConfInput) {
+            pwdConfInput.addEventListener('input', function() {
+                const val = this.value;
+                const pwdVal = pwdInput ? pwdInput.value : '';
+                
+                if (val.length === 0) {
+                    pwdMatchMsg.style.display = 'none';
+                    pwdConfInput.classList.remove('is-invalid', 'is-valid');
+                    isMatchValid = false;
+                    return;
+                }
+
+                pwdMatchMsg.style.display = 'block';
+                if (val === pwdVal) {
+                    pwdMatchMsg.className = 'form-text text-success fw-bold mt-2';
+                    pwdMatchMsg.innerHTML = '<i class="fa fa-check-circle me-1"></i> Mật khẩu khớp';
+                    pwdConfInput.classList.remove('is-invalid');
+                    pwdConfInput.classList.add('is-valid');
+                    isMatchValid = true;
+                } else {
+                    pwdMatchMsg.className = 'form-text text-danger mt-2';
+                    pwdMatchMsg.innerHTML = '<i class="fa fa-times-circle me-1"></i> Mật khẩu không khớp';
+                    pwdConfInput.classList.remove('is-valid');
+                    pwdConfInput.classList.add('is-invalid');
+                    isMatchValid = false;
+                }
+                checkFormValidity();
+            });
+        }
+
     });
 </script>
 @endpush
