@@ -145,11 +145,7 @@
 
                 @if(Auth::user()->hasRole(['ADMIN', 'DISPATCH']))
                 <div class="small text-white text-uppercase fw-bold mt-4 mb-2 px-3" style="font-size: 0.65rem; letter-spacing: 1px;">Hệ thống</div>
-                @if(Auth::user()->hasRole(['ADMIN']))
-                <a href="{{ route('settings.index') }}" class="nav-link-custom {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <i class="fa fa-building"></i> Thông tin công ty
-                </a>
-                @endif
+
                 <a href="{{ route('users.index') }}" class="nav-link-custom {{ request()->routeIs('users.*') ? 'active' : '' }}">
                     <i class="fa fa-users-cog"></i> Nhân sự
                 </a>
