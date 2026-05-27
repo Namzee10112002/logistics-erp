@@ -37,7 +37,7 @@ class DriverController extends Controller
         $drivers = $this->driverService->getAll($request->all());
         $driverUsers = User::query()
             ->whereHas('role', fn ($query) => $query->where('role_code', 'DRIVER'))
-            ->with('driver')
+            ->whereDoesntHave('driver', fn ($query) => $query->withTrashed())
             ->orderBy('name')
             ->get();
 

@@ -41,7 +41,7 @@ class FieldStaffController extends Controller
             ->get();
         $fieldUsers = User::query()
             ->whereHas('role', fn ($query) => $query->where('role_code', 'FIELD'))
-            ->with('fieldStaff')
+            ->whereDoesntHave('fieldStaff', fn ($query) => $query->withTrashed())
             ->orderBy('name')
             ->get();
 

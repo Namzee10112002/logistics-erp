@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\FieldStaff;
 use App\Models\Location;
 use App\Models\Role;
 use App\Models\User;
@@ -118,6 +119,37 @@ class FieldStaffManagementTest extends TestCase
         ]);
         $this->assertDatabaseHas('field_staff_location', ['location_id' => $warehouse->id]);
         $this->assertDatabaseHas('field_staff_location', ['location_id' => $depot->id]);
+    }
+
+    public function test_field_staff_account_dropdown_only_shows_unlinked_field_users(): void
+    {
+        $admin = $this->userWithRole('ADMIN');
+        $fieldRole = Role::factory()->create([
+            'role_code' => 'FIELD',
+            'role_name' => 'FIELD',
+        ]);
+        $linkedUser = User::factory()->create([
+            'email' => 'linked.field@example.test',
+            'role_id' => $fieldRole->id,
+        ]);
+        $unlinkedUser = User::factory()->create([
+            'email' => 'unlinked.field@example.test',
+            'role_id' => $fieldRole->id,
+        ]);
+        $location = Location::factory()->create(['type' => 'warehouse']);
+
+        FieldStaff::factory()->create([
+            'user_id' => $linkedUser->id,
+            'responsible_location_id' => $location->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('field-staff.index'))
+            ->assertOk()
+            ->assertViewHas('fieldUsers', function ($users) use ($linkedUser, $unlinkedUser): bool {
+                return $users->contains('id', $unlinkedUser->id)
+                    && ! $users->contains('id', $linkedUser->id);
+            });
     }
 
     /**

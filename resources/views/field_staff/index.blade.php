@@ -213,11 +213,34 @@
 
 @push('scripts')
 <script>
+    function removeTemporaryFieldUserOptions() {
+        document.querySelectorAll('#user_id option[data-temporary-linked-user="true"]').forEach((option) => option.remove());
+    }
+
+    function ensureFieldUserOption(staff) {
+        const select = document.getElementById('user_id');
+        removeTemporaryFieldUserOptions();
+
+        if (!staff.user_id || !staff.user) {
+            select.value = '';
+            return;
+        }
+
+        if (!Array.from(select.options).some((option) => option.value === String(staff.user_id))) {
+            const option = new Option(`${staff.user.name} - ${staff.user.username || staff.user.email}`, staff.user_id, true, true);
+            option.dataset.temporaryLinkedUser = 'true';
+            select.add(option);
+        }
+
+        select.value = String(staff.user_id);
+    }
+
     function prepareAdd() {
         document.getElementById('modalTitle').innerText = 'Thêm Nhân viên hiện trường';
         document.getElementById('fieldStaffForm').action = "{{ route('field-staff.store') }}";
         document.getElementById('methodField').innerHTML = '';
         document.getElementById('fieldStaffForm').reset();
+        removeTemporaryFieldUserOptions();
     }
 
     function dateOnly(value) {
@@ -232,7 +255,7 @@
         document.getElementById('full_name').value = staff.full_name;
         document.getElementById('phone').value = staff.phone || '';
         document.getElementById('date_of_birth').value = isoToDate(dateOnly(staff.date_of_birth));
-        document.getElementById('user_id').value = staff.user_id || '';
+        ensureFieldUserOption(staff);
         const selectedLocations = (staff.responsible_locations || []).map((location) => String(location.id));
         if (selectedLocations.length === 0 && staff.responsible_location_id) {
             selectedLocations.push(String(staff.responsible_location_id));

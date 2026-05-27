@@ -234,6 +234,35 @@ class CustomerFeedbackWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_driver_account_dropdown_only_shows_unlinked_driver_users(): void
+    {
+        $admin = $this->userWithRole('ADMIN');
+        $driverRole = Role::factory()->create([
+            'role_code' => 'DRIVER',
+            'role_name' => 'DRIVER',
+        ]);
+        $linkedUser = User::factory()->create([
+            'email' => 'linked.driver@example.test',
+            'role_id' => $driverRole->id,
+        ]);
+        $unlinkedUser = User::factory()->create([
+            'email' => 'unlinked.driver@example.test',
+            'role_id' => $driverRole->id,
+        ]);
+
+        Driver::factory()->create([
+            'user_id' => $linkedUser->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('drivers.index'))
+            ->assertOk()
+            ->assertViewHas('driverUsers', function ($users) use ($linkedUser, $unlinkedUser): bool {
+                return $users->contains('id', $unlinkedUser->id)
+                    && ! $users->contains('id', $linkedUser->id);
+            });
+    }
+
     public function test_field_staff_can_upload_documents_only_for_active_assignment(): void
     {
         Storage::fake('public');

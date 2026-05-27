@@ -209,11 +209,34 @@
 
 @push('scripts')
 <script>
+    function removeTemporaryDriverUserOptions() {
+        document.querySelectorAll('#user_id option[data-temporary-linked-user="true"]').forEach((option) => option.remove());
+    }
+
+    function ensureDriverUserOption(driver) {
+        const select = document.getElementById('user_id');
+        removeTemporaryDriverUserOptions();
+
+        if (!driver.user_id || !driver.user) {
+            select.value = '';
+            return;
+        }
+
+        if (!Array.from(select.options).some((option) => option.value === String(driver.user_id))) {
+            const option = new Option(`${driver.user.name} - ${driver.user.username || driver.user.email}`, driver.user_id, true, true);
+            option.dataset.temporaryLinkedUser = 'true';
+            select.add(option);
+        }
+
+        select.value = String(driver.user_id);
+    }
+
     function prepareAdd() {
         document.getElementById('modalTitle').innerText = 'Thêm Tài Xế Mới';
         document.getElementById('driverForm').action = "{{ route('drivers.store') }}";
         document.getElementById('methodField').innerHTML = '';
         document.getElementById('driverForm').reset();
+        removeTemporaryDriverUserOptions();
     }
 
     function prepareEdit(driver) {
@@ -224,7 +247,7 @@
         document.getElementById('full_name').value = driver.full_name;
         document.getElementById('phone').value = driver.phone;
         document.getElementById('date_of_birth').value = driver.date_of_birth ? isoToDate(driver.date_of_birth.split('T')[0].split(' ')[0]) : '';
-        document.getElementById('user_id').value = driver.user_id || '';
+        ensureDriverUserOption(driver);
         document.getElementById('license_number').value = driver.license_number;
         document.getElementById('status').value = driver.status;
         document.getElementById('start_date').value = driver.start_date ? isoToDate(driver.start_date.split('T')[0].split(' ')[0]) : '';
