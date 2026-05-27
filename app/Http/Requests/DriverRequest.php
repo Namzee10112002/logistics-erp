@@ -32,6 +32,18 @@ class DriverRequest extends FormRequest
         $driverId = $this->route('driver') ? $this->route('driver')->id : null;
 
         return [
+            'user_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(function ($query) {
+                    $query->whereIn('role_id', function ($subQuery) {
+                        $subQuery->select('id')
+                            ->from('roles')
+                            ->where('role_code', 'DRIVER');
+                    });
+                }),
+                Rule::unique('drivers', 'user_id')->ignore($driverId),
+            ],
             'full_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'regex:/^0\d{9}$/'],
             'date_of_birth' => ['required', 'date', 'before:today'],
@@ -47,6 +59,8 @@ class DriverRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'user_id.exists' => 'Tài khoản liên kết phải thuộc vai trò Tài xế.',
+            'user_id.unique' => 'Tài khoản này đã được liên kết với một tài xế khác.',
             'full_name.required' => 'Vui lòng nhập họ tên tài xế.',
             'phone.required' => 'Vui lòng nhập số điện thoại.',
             'phone.regex' => 'Số điện thoại phải gồm đúng 10 số và bắt đầu bằng 0.',

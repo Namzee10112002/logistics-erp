@@ -9,7 +9,7 @@ class DriverService
 {
     public function getAll(array $filters = [], int $perPage = 10)
     {
-        $query = Driver::query();
+        $query = Driver::with('user');
 
         if (! empty($filters['search'])) {
             $search = $filters['search'];

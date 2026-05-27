@@ -204,6 +204,36 @@ class CustomerFeedbackWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_driver_can_be_linked_to_driver_user_account(): void
+    {
+        $admin = $this->userWithRole('ADMIN');
+        $driverUser = $this->userWithRole('DRIVER', ['email' => 'driver.link@example.test']);
+        $accountantUser = $this->userWithRole('ACCOUNTANT', ['email' => 'not.driver@example.test']);
+
+        $payload = [
+            'full_name' => 'Nguyễn Văn Tài',
+            'phone' => '0901234567',
+            'date_of_birth' => '21/05/1990',
+            'license_number' => 'GPLX-TEST-001',
+            'status' => 'active',
+            'rank' => 'Tài xế chính',
+        ];
+
+        $this->actingAs($admin)
+            ->post(route('drivers.store'), $payload + ['user_id' => $accountantUser->id])
+            ->assertSessionHasErrors('user_id');
+
+        $this->actingAs($admin)
+            ->post(route('drivers.store'), $payload + ['user_id' => $driverUser->id])
+            ->assertRedirect(route('drivers.index'));
+
+        $this->assertDatabaseHas('drivers', [
+            'user_id' => $driverUser->id,
+            'full_name' => 'Nguyễn Văn Tài',
+            'phone' => '0901234567',
+        ]);
+    }
+
     public function test_field_staff_can_upload_documents_only_for_active_assignment(): void
     {
         Storage::fake('public');

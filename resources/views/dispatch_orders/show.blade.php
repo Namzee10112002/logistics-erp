@@ -6,8 +6,8 @@
 @php
     $loadingPercent = (int) ($dispatchOrder->loading_percent ?? 0);
     $progressClass = $loadingPercent >= 100 ? 'bg-success' : ($loadingPercent >= 70 ? 'bg-info' : ($loadingPercent >= 35 ? 'bg-warning' : 'bg-danger'));
-    $mapLat = $dispatchOrder->current_latitude ?? 10.7769;
-    $mapLng = $dispatchOrder->current_longitude ?? 106.7009;
+    $mapLat = $dispatchOrder->current_latitude ?? 20.8449;
+    $mapLng = $dispatchOrder->current_longitude ?? 106.6881;
     $routePoints = $dispatchOrder->trackingLogs
         ->filter(fn($log) => filled($log->latitude) && filled($log->longitude))
         ->sortBy('created_at')

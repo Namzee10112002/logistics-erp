@@ -216,21 +216,68 @@ function initLocationButtons() {
             }
 
             button.disabled = true;
-            if (status) status.textContent = 'Đang lấy vị trí hiện tại...';
+            if (status) status.textContent = 'Đang lấy vị trí chính xác nhất...';
 
-            navigator.geolocation.getCurrentPosition((position) => {
-                latitude.value = position.coords.latitude.toFixed(7);
-                longitude.value = position.coords.longitude.toFixed(7);
-                if (status) status.textContent = `Đã cập nhật: ${latitude.value}, ${longitude.value}`;
-                button.disabled = false;
-            }, () => {
-                if (status) status.textContent = 'Không lấy được vị trí. Vui lòng cho phép chia sẻ vị trí.';
-                button.disabled = false;
-            }, {
+            let bestPosition = null;
+            let watchId = null;
+            let finished = false;
+            const startedAt = Date.now();
+            const options = {
                 enableHighAccuracy: true,
-                timeout: 12000,
+                timeout: 20000,
                 maximumAge: 0,
-            });
+            };
+
+            const applyPosition = () => {
+                if (!bestPosition) {
+                    if (status) status.textContent = 'Không lấy được vị trí. Vui lòng cho phép chia sẻ vị trí.';
+                    button.disabled = false;
+                    return;
+                }
+
+                latitude.value = bestPosition.coords.latitude.toFixed(7);
+                longitude.value = bestPosition.coords.longitude.toFixed(7);
+                const accuracy = Math.round(bestPosition.coords.accuracy || 0);
+                if (status) {
+                    status.textContent = `Đã cập nhật: ${latitude.value}, ${longitude.value} (sai số khoảng ${accuracy}m)`;
+                }
+                button.disabled = false;
+            };
+
+            const stopWatching = () => {
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
+
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+
+                applyPosition();
+            };
+
+            const handlePosition = (position) => {
+                if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
+                    bestPosition = position;
+                    if (status) {
+                        status.textContent = `Đang tối ưu vị trí, sai số tốt nhất hiện tại khoảng ${Math.round(position.coords.accuracy)}m...`;
+                    }
+                }
+
+                if ((position.coords.accuracy || Infinity) <= 25 || Date.now() - startedAt > 9000) {
+                    stopWatching();
+                }
+            };
+
+            const handleError = () => {
+                stopWatching();
+            };
+
+            watchId = navigator.geolocation.watchPosition(handlePosition, handleError, options);
+            window.setTimeout(stopWatching, 10000);
         });
     });
 }

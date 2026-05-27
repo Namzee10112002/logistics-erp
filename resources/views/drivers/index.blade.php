@@ -85,6 +85,7 @@
                             <div class="fw-bold text-navy">{{ $driver->driver_code ?? '---' }}</div>
                             <div class="small">{{ $driver->full_name }}</div>
                             <div class="small text-muted">Ngày sinh: {{ $driver->date_of_birth?->format('d/m/Y') ?? '---' }}</div>
+                            <div class="small text-muted">TK: {{ $driver->user?->username ?? $driver->user?->email ?? 'Chưa liên kết' }}</div>
                         </td>
                         <td>{{ $driver->phone }}</td>
                         <td>{{ $driver->date_of_birth?->format('d/m/Y') ?? '---' }}</td>
@@ -153,6 +154,17 @@
                             <input type="text" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" placeholder="Ngày/Tháng/Năm" data-date-input data-label="Ngày sinh" required>
                         </div>
                         <div class="col-md-12">
+                            <label class="form-label fw-semibold">Tài khoản liên kết</label>
+                            <select name="user_id" id="user_id" class="form-select bg-light border-0">
+                                <option value="">Không liên kết</option>
+                                @foreach($driverUsers as $user)
+                                    <option value="{{ $user->id }}">
+                                        {{ $user->name }} - {{ $user->username ?? $user->email }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Bằng Lái</label>
                             <input type="text" name="license_number" id="license_number" class="form-control bg-light border-0" required>
                         </div>
@@ -212,6 +224,7 @@
         document.getElementById('full_name').value = driver.full_name;
         document.getElementById('phone').value = driver.phone;
         document.getElementById('date_of_birth').value = driver.date_of_birth ? isoToDate(driver.date_of_birth.split('T')[0].split(' ')[0]) : '';
+        document.getElementById('user_id').value = driver.user_id || '';
         document.getElementById('license_number').value = driver.license_number;
         document.getElementById('status').value = driver.status;
         document.getElementById('start_date').value = driver.start_date ? isoToDate(driver.start_date.split('T')[0].split(' ')[0]) : '';
