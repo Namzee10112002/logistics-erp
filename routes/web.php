@@ -98,19 +98,22 @@ Route::middleware('auth')->group(function () {
     // ADMIN and DISPATCH can do everything
     Route::middleware('role:ADMIN,DISPATCH,FIELD')->group(function () {
         Route::get('field-assignments', [FieldAssignmentController::class, 'index'])->name('field-assignments.index');
-        Route::patch('field-assignments/{fieldAssignment}/status', [FieldAssignmentController::class, 'updateStatus'])->name('field-assignments.update-status');
     });
 
     Route::middleware('role:ADMIN,DISPATCH')->group(function () {
         Route::resource('dispatch-orders', DispatchOrderController::class)->only(['create', 'store', 'destroy']);
         Route::get('field-assignments/create', [FieldAssignmentController::class, 'create'])->name('field-assignments.create');
         Route::post('field-assignments', [FieldAssignmentController::class, 'store'])->name('field-assignments.store');
+        Route::patch('field-assignments/{fieldAssignment}/status', [FieldAssignmentController::class, 'updateStatus'])->name('field-assignments.update-status');
     });
 
-    // DRIVER, ADMIN, DISPATCH can view and update status
-    Route::middleware('role:ADMIN,DISPATCH,DRIVER')->group(function () {
+    // DRIVER, ADMIN, DISPATCH, ACCOUNTANT can view dispatch orders
+    Route::middleware('role:ADMIN,DISPATCH,DRIVER,ACCOUNTANT')->group(function () {
         Route::get('dispatch-orders', [DispatchOrderController::class, 'index'])->name('dispatch-orders.index');
         Route::get('dispatch-orders/{dispatch_order}', [DispatchOrderController::class, 'show'])->name('dispatch-orders.show');
+    });
+
+    Route::middleware('role:ADMIN,DISPATCH,DRIVER')->group(function () {
         Route::patch('/dispatch-orders/{dispatch_order}/status', [DispatchOrderController::class, 'updateStatus'])->name('dispatch-orders.update-status');
     });
 
@@ -129,6 +132,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:ADMIN,ACCOUNTANT,DOCUMENT')->group(function () {
         Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::put('documents/{document}', [DocumentController::class, 'update'])->name('documents.update');
         Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
     });
 
@@ -144,6 +148,7 @@ Route::middleware('auth')->group(function () {
         Route::get('debit-notes/{debitNote}', [DebitNoteController::class, 'show'])->name('debit-notes.show');
         Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
         Route::post('recurring-expenses', [RecurringExpenseController::class, 'store'])->name('recurring-expenses.store');
+        Route::put('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'update'])->name('recurring-expenses.update');
         Route::delete('recurring-expenses/{recurringExpense}', [RecurringExpenseController::class, 'destroy'])->name('recurring-expenses.destroy');
     });
 

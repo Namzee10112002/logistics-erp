@@ -5,18 +5,25 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Quản lý Đội ngũ Tài xế</h4>
-    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#driverModal" onclick="prepareAdd()">
-        <i class="fa fa-plus me-2"></i> THÊM TÀI XẾ
-    </button>
     <x-export-buttons />
 </div>
 
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
-    <form action="{{ route('drivers.index') }}" method="GET" class="row g-3">
-        <div class="col-md-5">
-            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã tài xế, tên, GPLX, cấp bậc..." value="{{ request('search') }}">
+    <form action="{{ route('drivers.index') }}" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Mã tài xế</label>
+            <input type="text" name="driver_code" class="form-control border-light" placeholder="Mã tài xế" value="{{ request('driver_code') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Họ tên</label>
+            <input type="text" name="full_name" class="form-control border-light" placeholder="Họ tên" value="{{ request('full_name') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Số điện thoại</label>
+            <input type="text" name="phone" class="form-control border-light" placeholder="10 số" value="{{ request('phone') }}">
         </div>
         <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Cấp bậc</label>
             <select name="rank" class="form-select border-light">
                 <option value="">Cấp bậc</option>
                 @foreach(\App\Support\LogisticsOptions::driverRanks() as $value => $label)
@@ -25,23 +32,37 @@
             </select>
         </div>
         <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Trạng thái</label>
             <select name="status" class="form-select border-light">
                 <option value="">Tất cả</option>
                 <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Đang làm việc</option>
                 <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Nghỉ việc</option>
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Số GPLX</label>
+            <input type="text" name="license_number" class="form-control border-light" placeholder="GPLX" value="{{ request('license_number') }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Ngày sinh</label>
+            <input type="text" name="date_of_birth" class="form-control border-light" placeholder="Ngày/Tháng/Năm" value="{{ \App\Support\VietnameseDate::display(request('date_of_birth')) }}" data-date-input data-label="Ngày sinh">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small fw-bold text-muted">Thời hạn hợp đồng</label>
+            <input type="text" name="contract_expiry" class="form-control border-light" placeholder="Ngày/Tháng/Năm" value="{{ \App\Support\VietnameseDate::display(request('contract_expiry')) }}" data-date-input data-label="Thời hạn hợp đồng">
+        </div>
+        <div class="col-md-2 ms-md-auto">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
-        <div class="col-md-3"><input type="text" name="driver_code" class="form-control border-light" placeholder="Mã tài xế" value="{{ request('driver_code') }}"></div>
-        <div class="col-md-3"><input type="text" name="full_name" class="form-control border-light" placeholder="Họ tên" value="{{ request('full_name') }}"></div>
-        <div class="col-md-3"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
-        <div class="col-md-3"><input type="text" name="license_number" class="form-control border-light" placeholder="GPLX" value="{{ request('license_number') }}"></div>
     </form>
 </div>
 
 <!-- Data Table -->
+<div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-navy px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#driverModal" onclick="prepareAdd()">
+        <i class="fa fa-plus me-2"></i> THÊM TÀI XẾ
+    </button>
+</div>
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -63,7 +84,7 @@
                         <td class="ps-4">
                             <div class="fw-bold text-navy">{{ $driver->driver_code ?? '---' }}</div>
                             <div class="small">{{ $driver->full_name }}</div>
-                            <div class="small text-muted">Vào làm: {{ $driver->start_date?->format('d/m/Y') ?? '---' }}</div>
+                            <div class="small text-muted">Ngày sinh: {{ $driver->date_of_birth?->format('d/m/Y') ?? '---' }}</div>
                         </td>
                         <td>{{ $driver->phone }}</td>
                         <td>{{ $driver->date_of_birth?->format('d/m/Y') ?? '---' }}</td>
@@ -102,7 +123,7 @@
         </table>
     </div>
     <div class="p-4 border-top">
-        {{ $drivers->links('pagination::bootstrap-5') }}
+        {{ $drivers->appends(request()->query())->links('pagination::bootstrap-5') }}
     </div>
 </div>
 
@@ -121,15 +142,15 @@
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Họ và Tên</label>
-                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" required>
+                            <input type="text" name="full_name" id="full_name" class="form-control bg-light border-0" data-validate="person-name" data-label="Họ và tên" required>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Điện Thoại</label>
-                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" required>
+                            <input type="text" name="phone" id="phone" class="form-control bg-light border-0" maxlength="10" inputmode="numeric" data-validate="phone-vn" data-label="Số điện thoại" required>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Ngày sinh</label>
-                            <input type="date" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" required>
+                            <input type="text" name="date_of_birth" id="date_of_birth" class="form-control bg-light border-0" placeholder="Ngày/Tháng/Năm" data-date-input data-label="Ngày sinh" required>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Số Bằng Lái</label>
@@ -137,7 +158,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Ngày bắt đầu làm việc</label>
-                            <input type="date" name="start_date" id="start_date" class="form-control bg-light border-0">
+                            <input type="text" name="start_date" id="start_date" class="form-control bg-light border-0" placeholder="Ngày/Tháng/Năm" data-date-input data-label="Ngày bắt đầu làm việc">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Cấp bậc</label>
@@ -150,7 +171,7 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Thời hạn hợp đồng</label>
-                            <input type="date" name="contract_expiry" id="contract_expiry" class="form-control bg-light border-0">
+                            <input type="text" name="contract_expiry" id="contract_expiry" class="form-control bg-light border-0" placeholder="Ngày/Tháng/Năm" data-date-input data-label="Thời hạn hợp đồng">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Trạng Thái</label>
@@ -190,12 +211,12 @@
         
         document.getElementById('full_name').value = driver.full_name;
         document.getElementById('phone').value = driver.phone;
-        document.getElementById('date_of_birth').value = driver.date_of_birth ? driver.date_of_birth.split('T')[0].split(' ')[0] : '';
+        document.getElementById('date_of_birth').value = driver.date_of_birth ? isoToDate(driver.date_of_birth.split('T')[0].split(' ')[0]) : '';
         document.getElementById('license_number').value = driver.license_number;
         document.getElementById('status').value = driver.status;
-        document.getElementById('start_date').value = driver.start_date ? driver.start_date.split('T')[0].split(' ')[0] : '';
+        document.getElementById('start_date').value = driver.start_date ? isoToDate(driver.start_date.split('T')[0].split(' ')[0]) : '';
         document.getElementById('rank').value = driver.rank || '';
-        document.getElementById('contract_expiry').value = driver.contract_expiry ? driver.contract_expiry.split('T')[0].split(' ')[0] : '';
+        document.getElementById('contract_expiry').value = driver.contract_expiry ? isoToDate(driver.contract_expiry.split('T')[0].split(' ')[0]) : '';
         document.getElementById('note').value = driver.note || '';
     }
 </script>

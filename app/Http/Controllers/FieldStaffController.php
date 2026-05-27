@@ -28,7 +28,7 @@ class FieldStaffController extends Controller
                 $fieldStaff->full_name,
                 $fieldStaff->phone,
                 $fieldStaff->date_of_birth?->format('d/m/Y'),
-                $fieldStaff->responsibleLocation?->location_name,
+                $fieldStaff->responsibleLocations->pluck('location_name')->implode(', ') ?: $fieldStaff->responsibleLocation?->location_name,
                 $fieldStaff->certificates,
                 $fieldStaff->status,
             ])->all());

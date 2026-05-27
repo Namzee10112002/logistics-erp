@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Support\LogisticsOptions;
+use App\Support\VietnameseDate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,19 @@ class DriverRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(VietnameseDate::normalizedFields($this->all(), [
+            'date_of_birth',
+            'start_date',
+            'contract_expiry',
+        ]));
+
+        if (is_string($this->input('phone'))) {
+            $this->merge(['phone' => trim($this->input('phone'))]);
+        }
     }
 
     public function rules(): array
@@ -37,6 +51,7 @@ class DriverRequest extends FormRequest
             'phone.required' => 'Vui lòng nhập số điện thoại.',
             'phone.regex' => 'Số điện thoại phải gồm đúng 10 số và bắt đầu bằng 0.',
             'date_of_birth.required' => 'Vui lòng nhập ngày sinh tài xế.',
+            'date_of_birth.date' => 'Ngày sinh phải đúng định dạng ngày/tháng/năm.',
             'license_number.required' => 'Vui lòng nhập số bằng lái.',
             'license_number.unique' => 'Số bằng lái này đã tồn tại.',
         ];

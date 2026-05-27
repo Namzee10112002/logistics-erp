@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Driver;
+use App\Support\VietnameseDate;
 
 class DriverService
 {
@@ -33,6 +34,14 @@ class DriverService
             if (! empty($filters[$field])) {
                 $query->where($field, 'like', "%{$filters[$field]}%");
             }
+        }
+
+        if (! empty($filters['date_of_birth'])) {
+            $query->whereDate('date_of_birth', VietnameseDate::toDatabase($filters['date_of_birth']));
+        }
+
+        if (! empty($filters['contract_expiry'])) {
+            $query->whereDate('contract_expiry', VietnameseDate::toDatabase($filters['contract_expiry']));
         }
 
         return $query->latest()->paginate($perPage);

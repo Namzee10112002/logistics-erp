@@ -304,8 +304,6 @@ class ExportService
             $rightHeader .= $this->docxParagraph('Logo: '.asset(self::LOGO_PATH), false, 'right');
         }
 
-        $rightHeader .= $this->docxParagraph((string) $context['company_name'], true, 'right', false, 18);
-
         $tableRows = $this->docxTableRow($headers, true, $tableColumnWidths);
 
         foreach ($rows as $row) {
@@ -418,9 +416,8 @@ class ExportService
         $content .= $this->pdfCenteredText(421, 512, $this->pdfLimit($this->ascii((string) $context['contact_line']), 560), 8, '0.10 0.14 0.24');
         $content .= $this->pdfCenteredText(421, 480, $this->ascii((string) $context['title_upper']), 16, '0.10 0.14 0.49');
         $content .= "0.03 0.64 0.62 rg\n335 469 172 2 re f\n";
-        $content .= $this->pdfCenteredText(421, 452, $this->pdfLimit($this->ascii((string) $context['content']), 500), 10, '0.19 0.22 0.30');
 
-        $tableTop = 424;
+        $tableTop = 444;
         $left = 35;
         $width = 772;
         $rowHeight = 18;

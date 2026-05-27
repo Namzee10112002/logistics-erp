@@ -88,7 +88,7 @@
                     </div>
                     <div class="col-md-4 mt-4">
                         <label class="small text-muted text-uppercase fw-bold">Container</label>
-                        <div class="fw-bold">{{ $shippingJob->container_number ?? 'N/A' }} ({{ $shippingJob->container_type ?? 'Lẻ' }})</div>
+                        <div class="fw-bold">{{ filled($shippingJob->container_number) ? $shippingJob->container_number : 'Hàng lẻ' }} ({{ $shippingJob->container_type ?? 'Lẻ' }})</div>
                     </div>
                     <div class="col-md-4 mt-4">
                         <label class="small text-muted text-uppercase fw-bold">Hạn Hoàn Thành</label>
@@ -374,19 +374,21 @@
                                     <i class="fa {{ Str::endsWith($doc->file_url, '.pdf') ? 'fa-file-pdf' : 'fa-file-image' }} me-2 opacity-75"></i>
                                     <div class="text-truncate">
                                         <div class="small fw-bold">{{ $doc->doc_category }}</div>
-                                        <div class="small opacity-50" style="font-size: 0.7rem;">{{ $doc->created_at->format('d/m H:i') }}</div>
+                                        <div class="small opacity-50" style="font-size: 0.7rem;">{{ $doc->created_at->format('d/m/Y') }}</div>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-1">
-                                    <a href="{{ Storage::url($doc->file_url) }}" target="_blank" class="btn btn-link text-white p-1">
+                                    <a href="{{ route('documents.show', $doc) }}" target="_blank" class="btn btn-link text-white p-1">
                                         <i class="fa fa-eye"></i>
                                     </a>
-                                    <form action="{{ route('documents.destroy', $doc->id) }}" method="POST" id="delete-doc-{{ $doc->id }}" class="d-none">
-                                        @csrf @method('DELETE')
-                                    </form>
-                                    <button type="button" class="btn btn-link text-danger p-1" onclick="handleDelete('delete-doc-{{ $doc->id }}', 'Xóa chứng từ này?')">
-                                        <i class="fa fa-trash-alt"></i>
-                                    </button>
+                                    @if(Auth::user()->hasRole(['ADMIN', 'ACCOUNTANT', 'DOCUMENT']))
+                                        <form action="{{ route('documents.destroy', $doc->id) }}" method="POST" id="delete-doc-{{ $doc->id }}" class="d-none">
+                                            @csrf @method('DELETE')
+                                        </form>
+                                        <button type="button" class="btn btn-link text-danger p-1" onclick="handleDelete('delete-doc-{{ $doc->id }}', 'Xóa chứng từ này?')">
+                                            <i class="fa fa-trash-alt"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach

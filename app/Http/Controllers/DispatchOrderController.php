@@ -37,8 +37,8 @@ class DispatchOrderController extends Controller
                 $order->trailer?->plate_number,
                 $order->planned_departure_date?->format('d/m/Y'),
                 $order->planned_return_date?->format('d/m/Y'),
-                $order->approval_status,
-                $order->dispatch_status,
+                $this->approvalStatusLabel($order->approval_status),
+                $this->dispatchStatusLabel($order->dispatch_status),
             ])->all());
         }
 
@@ -98,6 +98,7 @@ class DispatchOrderController extends Controller
             'endLocation',
             'creator',
             'approver',
+            'trackingLogs.updater',
         ]);
 
         return view('dispatch_orders.show', compact('dispatchOrder'));
@@ -122,6 +123,10 @@ class DispatchOrderController extends Controller
             if (! $driver || $dispatchOrder->driver_id !== $driver->id) {
                 abort(403, 'Bạn không có quyền cập nhật lệnh điều xe này.');
             }
+
+            if (array_key_exists('actual_fuel_liters', $validated) && $validated['actual_fuel_liters'] !== null) {
+                abort(403, 'Chỉ Admin hoặc Điều vận được cập nhật tổng dầu thực tế.');
+            }
         }
 
         $status = $validated['status'] ?? $dispatchOrder->dispatch_status;
@@ -129,6 +134,16 @@ class DispatchOrderController extends Controller
 
         if ($loadingPercent === 100) {
             $status = 'completed';
+        }
+
+        $allowedTransitions = [
+            'dispatched' => ['dispatched', 'on_way'],
+            'on_way' => ['on_way', 'completed'],
+            'completed' => ['completed'],
+        ];
+
+        if (! in_array($status, $allowedTransitions[$dispatchOrder->dispatch_status] ?? [], true)) {
+            return back()->with('error', 'Trạng thái lệnh điều xe không hợp lệ theo luồng hiện tại.');
         }
 
         $updateData = ['dispatch_status' => $status];
@@ -145,7 +160,7 @@ class DispatchOrderController extends Controller
             $updateData['current_longitude'] = $validated['current_longitude'];
         }
 
-        if (array_key_exists('actual_fuel_liters', $validated)) {
+        if (auth()->user()->hasRole(['ADMIN', 'DISPATCH']) && array_key_exists('actual_fuel_liters', $validated)) {
             $updateData['actual_fuel_liters'] = $validated['actual_fuel_liters'];
         }
 
@@ -165,6 +180,8 @@ class DispatchOrderController extends Controller
         $dispatchOrder->trackingLogs()->create([
             'status_update' => $status,
             'updated_by' => auth()->id(),
+            'latitude' => $validated['current_latitude'] ?? null,
+            'longitude' => $validated['current_longitude'] ?? null,
         ]);
 
         // Notify Admins and Dispatchers
@@ -264,5 +281,23 @@ class DispatchOrderController extends Controller
         $lastSequence = $lastDocument ? (int) substr($lastDocument->document_code, -3) : 0;
 
         return $prefix.str_pad((string) ($lastSequence + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    private function approvalStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'approved' => 'Đã duyệt',
+            'rejected' => 'Từ chối',
+            default => 'Chờ duyệt',
+        };
+    }
+
+    private function dispatchStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'on_way' => 'Đang đi',
+            'completed' => 'Hoàn thành',
+            default => 'Đã điều xe',
+        };
     }
 }

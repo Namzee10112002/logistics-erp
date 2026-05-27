@@ -29,6 +29,12 @@ class ProfileController extends Controller
             'date_format' => ['required', 'in:d/m/Y,Y-m-d,d-m-Y'],
             'two_factor_enabled' => ['boolean'],
             'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+        ], [
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.min' => 'Mật khẩu phải có tối thiểu 8 ký tự.',
+            'password.mixed' => 'Mật khẩu phải có cả chữ hoa và chữ thường.',
+            'password.numbers' => 'Mật khẩu phải có ít nhất một chữ số.',
+            'password.symbols' => 'Mật khẩu phải có ít nhất một ký tự đặc biệt.',
         ]);
 
         $profileData = [

@@ -6,6 +6,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\ExportService;
 use App\Support\LogisticsOptions;
+use App\Support\VietnameseDate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -41,6 +42,14 @@ class UserController extends Controller
 
         if (request()->filled('role_id')) {
             $query->where('role_id', request('role_id'));
+        }
+
+        if (request()->filled('date_of_birth')) {
+            $query->whereDate('date_of_birth', VietnameseDate::toDatabase(request('date_of_birth')));
+        }
+
+        if (request()->filled('joined_at')) {
+            $query->whereDate('joined_at', VietnameseDate::toDatabase(request('joined_at')));
         }
 
         if (request()->filled('export')) {
@@ -83,6 +92,8 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge(VietnameseDate::normalizedFields($request->all(), ['date_of_birth', 'joined_at']));
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -92,7 +103,7 @@ class UserController extends Controller
             'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
             'date_of_birth' => 'required|date|before:today',
             'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
-        ]);
+        ], $this->validationMessages());
 
         // Extra check for DISPATCH
         if (auth()->user()->hasRole('DISPATCH')) {
@@ -149,6 +160,8 @@ class UserController extends Controller
             }
         }
 
+        $request->merge(VietnameseDate::normalizedFields($request->all(), ['date_of_birth', 'joined_at']));
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
@@ -157,7 +170,7 @@ class UserController extends Controller
             'department' => 'required|in:'.implode(',', array_keys(LogisticsOptions::departments())),
             'date_of_birth' => 'required|date|before:today',
             'joined_at' => 'required|date|after_or_equal:'.now()->subYears(10)->toDateString().'|before_or_equal:today',
-        ]);
+        ], $this->validationMessages());
 
         // Extra check for DISPATCH role selection
         if (auth()->user()->hasRole('DISPATCH')) {
@@ -179,7 +192,7 @@ class UserController extends Controller
         ]);
 
         if ($request->filled('password')) {
-            $request->validate(['password' => ['confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]]);
+            $request->validate(['password' => ['confirmed', Password::min(8)->mixedCase()->numbers()->symbols()]], $this->validationMessages());
             $user->update(['password' => Hash::make($request->password)]);
         }
 
@@ -222,5 +235,34 @@ class UserController extends Controller
         }
 
         return $prefix.$newSequence;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function validationMessages(): array
+    {
+        return [
+            'name.required' => 'Vui lòng nhập họ tên nhân viên.',
+            'email.required' => 'Vui lòng nhập email đăng nhập.',
+            'email.email' => 'Email đăng nhập không đúng định dạng.',
+            'email.unique' => 'Email này đã tồn tại.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'password.min' => 'Mật khẩu phải có tối thiểu 8 ký tự.',
+            'password.mixed' => 'Mật khẩu phải có cả chữ hoa và chữ thường.',
+            'password.numbers' => 'Mật khẩu phải có ít nhất một chữ số.',
+            'password.symbols' => 'Mật khẩu phải có ít nhất một ký tự đặc biệt.',
+            'role_id.required' => 'Vui lòng chọn vai trò hệ thống.',
+            'position.required' => 'Vui lòng chọn chức vụ.',
+            'department.required' => 'Vui lòng chọn bộ phận/phòng ban.',
+            'date_of_birth.required' => 'Vui lòng nhập ngày sinh.',
+            'date_of_birth.date' => 'Ngày sinh phải đúng định dạng ngày/tháng/năm.',
+            'date_of_birth.before' => 'Ngày sinh phải nhỏ hơn ngày hiện tại.',
+            'joined_at.required' => 'Vui lòng nhập ngày tham gia.',
+            'joined_at.date' => 'Ngày tham gia phải đúng định dạng ngày/tháng/năm.',
+            'joined_at.after_or_equal' => 'Ngày tham gia chỉ được trong vòng 10 năm gần đây.',
+            'joined_at.before_or_equal' => 'Ngày tham gia không được là ngày trong tương lai.',
+        ];
     }
 }

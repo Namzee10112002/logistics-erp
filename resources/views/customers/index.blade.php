@@ -5,31 +5,48 @@
 @section('content')
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
     <h4 class="fw-bold mb-0">Danh mục Khách hàng</h4>
-    <a href="{{ route('customers.create') }}" class="btn btn-navy px-4 fw-bold">
-        <i class="fa fa-plus me-2"></i> THÊM KHÁCH HÀNG
-    </a>
     <x-export-buttons />
 </div>
 
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
-    <form action="{{ route('customers.index') }}" method="GET" class="row g-3">
-        <div class="col-md-10">
-            <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã KH, tên, MST, email, người liên hệ, số điện thoại..." value="{{ request('search') }}">
+    <form action="{{ route('customers.index') }}" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Mã khách hàng</label>
+            <input type="text" name="customer_code" class="form-control border-light" placeholder="Mã KH" value="{{ request('customer_code') }}">
         </div>
         <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Tên khách hàng</label>
+            <input type="text" name="customer_name" class="form-control border-light" placeholder="Tên KH" value="{{ request('customer_name') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Mã số thuế</label>
+            <input type="text" name="tax_code" class="form-control border-light" placeholder="10 chữ số" value="{{ request('tax_code') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Email</label>
+            <input type="text" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Người liên hệ</label>
+            <input type="text" name="contact_person" class="form-control border-light" placeholder="Người liên hệ" value="{{ request('contact_person') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small fw-bold text-muted">Số điện thoại</label>
+            <input type="text" name="phone" class="form-control border-light" placeholder="10 số" value="{{ request('phone') }}">
+        </div>
+        <div class="col-md-2 ms-md-auto">
             <button type="submit" class="btn btn-navy w-100">Lọc</button>
         </div>
-        <div class="col-md-2"><input type="text" name="customer_code" class="form-control border-light" placeholder="Mã KH" value="{{ request('customer_code') }}"></div>
-        <div class="col-md-2"><input type="text" name="customer_name" class="form-control border-light" placeholder="Tên KH" value="{{ request('customer_name') }}"></div>
-        <div class="col-md-2"><input type="text" name="tax_code" class="form-control border-light" placeholder="MST" value="{{ request('tax_code') }}"></div>
-        <div class="col-md-2"><input type="text" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}"></div>
-        <div class="col-md-2"><input type="text" name="contact_person" class="form-control border-light" placeholder="Người liên hệ" value="{{ request('contact_person') }}"></div>
-        <div class="col-md-2"><input type="text" name="phone" class="form-control border-light" placeholder="SĐT" value="{{ request('phone') }}"></div>
     </form>
 </div>
 
 <!-- Data Table -->
+<div class="d-flex justify-content-end mb-3">
+    <a href="{{ route('customers.create') }}" class="btn btn-navy px-4 fw-bold">
+        <i class="fa fa-plus me-2"></i> THÊM KHÁCH HÀNG
+    </a>
+</div>
 <div class="card border-0 rounded-4 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
