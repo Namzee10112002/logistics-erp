@@ -102,6 +102,35 @@
                         </div>
                     </div>
 
+                    <div class="col-12">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 border h-100">
+                                    <label class="small text-muted text-uppercase fw-bold">Định mức nhiên liệu</label>
+                                    <div class="fw-bold text-navy fs-6">
+                                        {{ $dispatchOrder->fuel_quota !== null ? number_format((float) $dispatchOrder->fuel_quota, 1) . ' lít' : '---' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 border h-100">
+                                    <label class="small text-muted text-uppercase fw-bold">Định mức giá dầu</label>
+                                    <div class="fw-bold text-navy fs-6">
+                                        {{ $dispatchOrder->fuel_price_quota !== null ? number_format((float) $dispatchOrder->fuel_price_quota) . ' VNĐ/lít' : '---' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 border h-100">
+                                    <label class="small text-muted text-uppercase fw-bold">Định mức cầu đường</label>
+                                    <div class="fw-bold text-navy fs-6">
+                                        {{ $dispatchOrder->toll_quota !== null ? number_format((float) $dispatchOrder->toll_quota) . ' VNĐ' : '---' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-12 mt-4">
                         <div class="row g-3">
                             <div class="col-md-4">
