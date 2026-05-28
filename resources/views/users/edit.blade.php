@@ -89,12 +89,14 @@
                                             <i class="fa fa-eye"></i>
                                         </button>
                                     </div>
-                                    <div id="password-requirements" class="form-text text-danger mt-2" style="display: none;">
-                                        <ul class="mb-0 ps-3">
-                                            <li id="req-length">Tối thiểu 8 ký tự</li>
-                                            <li id="req-mixed">Có chữ hoa và chữ thường</li>
-                                            <li id="req-number">Có chữ số</li>
-                                            <li id="req-symbol">Có ký tự đặc biệt</li>
+                                    <div id="password-requirements" class="mt-2 small d-none">
+                                        <div class="text-muted mb-1 fw-semibold">Yêu cầu mật khẩu:</div>
+                                        <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                            <li id="req_length" class="text-danger"><i class="fa fa-times-circle me-1"></i> Tối thiểu 8 ký tự</li>
+                                            <li id="req_lower" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có chữ thường (a-z)</li>
+                                            <li id="req_upper" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có chữ hoa (A-Z)</li>
+                                            <li id="req_number" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có số (0-9)</li>
+                                            <li id="req_special" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có ký tự đặc biệt</li>
                                         </ul>
                                     </div>
                                     @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
@@ -191,13 +193,15 @@
         /** --- Password Real-time Validation & Toggle --- */
         const pwdInput = document.getElementById('password');
         const pwdConfInput = document.getElementById('password_confirmation');
-        const pwdReqBox = document.getElementById('password-requirements');
-        const pwdMatchMsg = document.getElementById('password-match-msg');
+        const reqsBox = document.getElementById('password-requirements');
         
-        const reqLength = document.getElementById('req-length');
-        const reqMixed = document.getElementById('req-mixed');
-        const reqNumber = document.getElementById('req-number');
-        const reqSymbol = document.getElementById('req-symbol');
+        const reqs = {
+            length: { el: document.getElementById('req_length'), regex: /.{8,}/ },
+            lower: { el: document.getElementById('req_lower'), regex: /[a-z]/ },
+            upper: { el: document.getElementById('req_upper'), regex: /[A-Z]/ },
+            number: { el: document.getElementById('req_number'), regex: /[0-9]/ },
+            special: { el: document.getElementById('req_special'), regex: /[^A-Za-z0-9]/ }
+        };
 
         // Toggle password visibility
         document.querySelectorAll('.toggle-password').forEach(btn => {
@@ -214,51 +218,45 @@
             });
         });
 
-        let isPwdValid = false;
-        let isMatchValid = false;
-
-        function checkFormValidity() {
-            if (submitBtn) {
-                // Not strictly disabling button to allow other edits
+        function updateRequirement(reqKey, val) {
+            const item = reqs[reqKey];
+            if (item.regex.test(val)) {
+                item.el.classList.add('d-none');
+            } else {
+                item.el.classList.remove('d-none');
             }
         }
 
         if (pwdInput) {
             pwdInput.addEventListener('input', function() {
                 const val = this.value;
-                if (val.length > 0) {
-                    pwdReqBox.style.display = 'block';
-                } else {
-                    pwdReqBox.style.display = 'none';
+                if (val.length === 0) {
+                    reqsBox.classList.add('d-none');
                     // clear confirmation
                     if (pwdConfInput) {
                         pwdConfInput.value = '';
                         pwdMatchMsg.style.display = 'none';
                         pwdConfInput.classList.remove('is-invalid', 'is-valid');
                     }
+                    return;
                 }
-
-                const hasLength = val.length >= 8;
-                const hasUpper = /[A-Z]/.test(val);
-                const hasLower = /[a-z]/.test(val);
-                const hasNumber = /[0-9]/.test(val);
-                const hasSymbol = /[^A-Za-z0-9]/.test(val);
                 
-                const hasMixed = hasUpper && hasLower;
+                reqsBox.classList.remove('d-none');
+                
+                let allMet = true;
+                Object.keys(reqs).forEach(key => {
+                    updateRequirement(key, val);
+                    if (!reqs[key].regex.test(val)) allMet = false;
+                });
 
-                // Update UI for requirements
-                reqLength.className = hasLength ? 'text-success' : 'text-danger';
-                reqMixed.className = hasMixed ? 'text-success' : 'text-danger';
-                reqNumber.className = hasNumber ? 'text-success' : 'text-danger';
-                reqSymbol.className = hasSymbol ? 'text-success' : 'text-danger';
-
-                isPwdValid = hasLength && hasMixed && hasNumber && hasSymbol;
+                if (allMet) {
+                    reqsBox.classList.add('d-none');
+                }
                 
                 // Re-trigger confirmation check if there's already some value
                 if (pwdConfInput && pwdConfInput.value.length > 0) {
                     pwdConfInput.dispatchEvent(new Event('input'));
                 }
-                checkFormValidity();
             });
         }
 

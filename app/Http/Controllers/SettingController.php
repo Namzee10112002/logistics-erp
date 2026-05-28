@@ -192,11 +192,11 @@ class SettingController extends Controller
         }
 
         if ($request->hasFile('stamp')) {
-            $request->file('stamp')->storeAs('public/assets', 'company-stamp.png');
+            $request->file('stamp')->move(public_path('img'), 'company-stamp.png');
         }
 
         if ($request->hasFile('logo')) {
-            $request->file('logo')->storeAs('public/assets', 'company-logo.png');
+            $request->file('logo')->move(public_path('img'), 'company-logo.png');
         }
 
         ActivityLog::log('upload_asset', 'Tải lên mẫu in ấn mới (Con dấu/Logo)');

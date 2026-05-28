@@ -228,15 +228,38 @@
                                             <div class="row g-3">
                                                 <div class="col-md-6">
                                                     <label class="form-label small text-muted">Mật khẩu mới</label>
-                                                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror">
-                                                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                                    <div class="input-group">
+                                                        <input type="password" name="password" id="new_password" class="form-control @error('password') is-invalid @enderror" placeholder="Nhập mật khẩu mới">
+                                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="new_password" tabindex="-1">
+                                                            <i class="fa fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                    @error('password') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                                                    
+                                                    {{-- Password Checklist --}}
+                                                    <div id="password_requirements" class="mt-2 small d-none">
+                                                        <div class="text-muted mb-1 fw-semibold">Yêu cầu mật khẩu:</div>
+                                                        <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                                            <li id="req_length" class="text-danger"><i class="fa fa-times-circle me-1"></i> Tối thiểu 8 ký tự</li>
+                                                            <li id="req_lower" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có chữ thường (a-z)</li>
+                                                            <li id="req_upper" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có chữ hoa (A-Z)</li>
+                                                            <li id="req_number" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có số (0-9)</li>
+                                                            <li id="req_special" class="text-danger"><i class="fa fa-times-circle me-1"></i> Có ký tự đặc biệt</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label small text-muted">Xác nhận mật khẩu mới</label>
-                                                    <input type="password" name="password_confirmation" class="form-control">
+                                                    <div class="input-group">
+                                                        <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" placeholder="Nhập lại mật khẩu mới">
+                                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password_confirmation" tabindex="-1">
+                                                            <i class="fa fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div id="req_match" class="small mt-1 text-danger d-none"><i class="fa fa-times-circle me-1"></i> Mật khẩu xác nhận chưa khớp</div>
                                                 </div>
                                             </div>
-                                            <div class="form-text mt-2">Bỏ trống nếu không muốn đổi mật khẩu. Mật khẩu mới tối thiểu 8 ký tự.</div>
+                                            <div class="form-text mt-2">Bỏ trống nếu không muốn đổi mật khẩu.</div>
                                         </div>
                                     </div>
 
@@ -436,14 +459,15 @@
                                         <div class="row g-2 mb-3">
                                             <div class="col-6 text-center">
                                                 <div class="small text-muted mb-1">Con dấu hiện tại</div>
-                                                <img src="{{ asset('img/company-stamp.png') }}" alt="Con dấu"
+                                                <img src="{{ asset('img/company-stamp.png') }}?v={{ time() }}" alt="Con dấu"
                                                      class="rounded border bg-light" style="height:60px;object-fit:contain;"
                                                      onerror="this.style.display='none'">
                                             </div>
                                             <div class="col-6 text-center">
                                                 <div class="small text-muted mb-1">Logo hiện tại</div>
-                                                <img src="{{ asset('img/company-logo.jpg') }}" alt="Logo"
-                                                     class="rounded border bg-light" style="height:60px;object-fit:contain;">
+                                                <img src="{{ asset('img/company-logo.png') }}?v={{ time() }}" alt="Logo"
+                                                     class="rounded border bg-light" style="height:60px;object-fit:contain;"
+                                                     onerror="this.onerror=null; this.src='{{ asset('img/company-logo.jpg') }}?v={{ time() }}'">
                                             </div>
                                         </div>
                                         <button type="submit" class="btn btn-info fw-bold w-100">
@@ -593,5 +617,93 @@
             updateFileName(fileInput);
         }
     }
+
+    // --- Xử lý Đổi Mật Khẩu UI ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle ẩn/hiện mật khẩu
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
+        // Validation Real-time
+        const pwdInput = document.getElementById('new_password');
+        const confirmInput = document.getElementById('password_confirmation');
+        const reqsBox = document.getElementById('password_requirements');
+        
+        if (!pwdInput || !confirmInput) return;
+
+        const reqs = {
+            length: { el: document.getElementById('req_length'), regex: /.{8,}/ },
+            lower: { el: document.getElementById('req_lower'), regex: /[a-z]/ },
+            upper: { el: document.getElementById('req_upper'), regex: /[A-Z]/ },
+            number: { el: document.getElementById('req_number'), regex: /[0-9]/ },
+            special: { el: document.getElementById('req_special'), regex: /[^A-Za-z0-9]/ }
+        };
+        const matchEl = document.getElementById('req_match');
+
+        function updateRequirement(reqKey, val) {
+            const item = reqs[reqKey];
+            if (item.regex.test(val)) {
+                item.el.classList.add('d-none'); // Ẩn khi đạt yêu cầu
+            } else {
+                item.el.classList.remove('d-none'); // Hiện khi chưa đạt
+            }
+        }
+
+        function checkAllRequirements() {
+            const val = pwdInput.value;
+            if (val.length === 0) {
+                reqsBox.classList.add('d-none');
+                matchEl.classList.add('d-none');
+                return;
+            }
+            
+            reqsBox.classList.remove('d-none');
+            
+            let allMet = true;
+            Object.keys(reqs).forEach(key => {
+                updateRequirement(key, val);
+                if (!reqs[key].regex.test(val)) allMet = false;
+            });
+
+            if (allMet) {
+                reqsBox.classList.add('d-none');
+            }
+
+            checkMatch();
+        }
+
+        function checkMatch() {
+            if (confirmInput.value.length > 0 && pwdInput.value !== confirmInput.value) {
+                matchEl.classList.remove('d-none');
+                matchEl.classList.remove('text-success');
+                matchEl.classList.add('text-danger');
+                matchEl.innerHTML = '<i class="fa fa-times-circle me-1"></i> Mật khẩu xác nhận chưa khớp';
+            } else if (confirmInput.value.length > 0 && pwdInput.value === confirmInput.value) {
+                matchEl.classList.remove('d-none');
+                matchEl.classList.remove('text-danger');
+                matchEl.classList.add('text-success');
+                matchEl.innerHTML = '<i class="fa fa-check-circle me-1"></i> Mật khẩu xác nhận đã khớp';
+            } else {
+                matchEl.classList.add('d-none');
+            }
+        }
+
+        pwdInput.addEventListener('input', checkAllRequirements);
+        confirmInput.addEventListener('input', checkMatch);
+    });
 </script>
 @endpush
