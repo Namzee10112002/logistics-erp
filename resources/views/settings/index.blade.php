@@ -743,6 +743,16 @@
                 errorMsg = 'Họ và tên không được chứa số hoặc ký tự đặc biệt.';
             }
 
+            // Chuẩn hóa viết hoa chữ cái đầu của mỗi từ
+            let capitalizedVal = val.split(' ').map(word => {
+                if (word.length === 0) return '';
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+
+            if (val !== capitalizedVal) {
+                val = capitalizedVal;
+            }
+
             if (originalVal !== val) {
                 let start = profileName.selectionStart;
                 let end = profileName.selectionEnd;

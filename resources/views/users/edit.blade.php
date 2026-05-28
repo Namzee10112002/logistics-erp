@@ -59,11 +59,11 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Ngày sinh</label>
-                                <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: 25/05/1990" name="date_of_birth" class="form-control" value="{{ old('date_of_birth', $user->date_of_birth?->format('Y-m-d')) }}" min="1950-01-01" max="{{ now()->subYears(18)->toDateString() }}" required>
+                                <input type="date" name="date_of_birth" class="form-control" value="{{ old('date_of_birth', $user->date_of_birth?->format('Y-m-d')) }}" min="1950-01-01" max="{{ now()->subYears(18)->toDateString() }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Ngày tham gia</label>
-                                <input type="text" onfocus="(this.type='date')" onblur="(this.value == '' ? this.type='text' : this.type='date')" placeholder="VD: {{ now()->format('d/m/Y') }}" name="joined_at" class="form-control" value="{{ old('joined_at', $user->joined_at?->format('Y-m-d') ?? now()->toDateString()) }}" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}" required>
+                                <input type="date" name="joined_at" class="form-control" value="{{ old('joined_at', $user->joined_at?->format('Y-m-d') ?? now()->toDateString()) }}" min="{{ now()->subYears(10)->toDateString() }}" max="{{ now()->toDateString() }}" required>
                             </div>
                         </div>
 
@@ -204,6 +204,16 @@
                 val = val.replace(invalidCharsRegex, '');
                 hasError = true;
                 errorMsg = 'Họ và tên không được chứa số hoặc ký tự đặc biệt.';
+            }
+
+            // Chuẩn hóa viết hoa chữ cái đầu của mỗi từ
+            let capitalizedVal = val.split(' ').map(word => {
+                if (word.length === 0) return '';
+                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            }).join(' ');
+
+            if (val !== capitalizedVal) {
+                val = capitalizedVal;
             }
 
             if (originalVal !== val) {
@@ -356,6 +366,8 @@
         const pwdInput = document.getElementById('password');
         const pwdConfInput = document.getElementById('password_confirmation');
         const reqsBox = document.getElementById('password-requirements');
+        const pwdMatchMsg = document.getElementById('password-match-msg');
+        let isMatchValid = false;
         
         const reqs = {
             length: { el: document.getElementById('req_length'), regex: /.{8,}/ },
@@ -448,7 +460,6 @@
                     pwdConfInput.classList.add('is-invalid');
                     isMatchValid = false;
                 }
-                checkFormValidity();
             });
         }
 
