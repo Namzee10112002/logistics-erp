@@ -17,17 +17,19 @@
         <div class="col-lg-6">
             <div class="card border-0 rounded-4 shadow-sm">
                 <div class="card-body p-4">
-                    <form action="{{ route('users.store') }}" method="POST">
+                    <form action="{{ route('users.store') }}" method="POST" id="user_form">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-bold">Họ tên nhân viên</label>
-                            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                            <input type="text" id="profile_name" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                            <div id="profile_name_error" class="invalid-feedback"></div>
                             @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Email đăng nhập</label>
-                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
+                            <input type="email" id="profile_email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
+                            <div id="profile_email_error" class="invalid-feedback"></div>
                             @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
@@ -159,22 +161,164 @@
             populatePositions(this.value, '');
         });
 
-        /** --- Email live validation --- */
-        if (emailInput) {
-            emailInput.addEventListener('input', function () {
-                const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                let errorDiv = document.getElementById('js-email-error');
-                if (!errorDiv) {
-                    errorDiv = document.createElement('div');
-                    errorDiv.id = 'js-email-error';
-                    errorDiv.className = 'invalid-feedback';
-                    errorDiv.innerText = 'Email không đúng định dạng (Ví dụ: user@example.com)';
-                    this.parentNode.appendChild(errorDiv);
+        /** --- Name and Email Validation --- */
+        const userForm = document.getElementById('user_form');
+        const profileName = document.getElementById('profile_name');
+        const profileEmail = document.getElementById('profile_email');
+        const nameError = document.getElementById('profile_name_error');
+        const emailError = document.getElementById('profile_email_error');
+
+        function doValidateName() {
+            if (!profileName) return true;
+            let originalVal = profileName.value;
+            let val = originalVal;
+            let hasError = false;
+            let errorMsg = '';
+
+            // Xóa khoảng trắng ở đầu
+            if (val.startsWith(' ')) {
+                val = val.replace(/^\s+/, '');
+                hasError = true;
+                errorMsg = 'Không được nhập khoảng trắng ở vị trí đầu tiên.';
+            }
+
+            // Xóa khoảng trắng thừa (nhiều hơn 1 dấu cách)
+            if (/\s{2,}/.test(val)) {
+                val = val.replace(/\s{2,}/g, ' ');
+                hasError = true;
+                errorMsg = 'Không được nhập quá 1 khoảng trắng giữa các từ.';
+            }
+
+            // Xóa số và ký tự đặc biệt, hỗ trợ các ký tự Unicode bằng \p{L} (chữ) và \p{M} (dấu)
+            const invalidCharsRegex = /[^\p{L}\p{M}\s]/gu;
+            if (invalidCharsRegex.test(val)) {
+                val = val.replace(invalidCharsRegex, '');
+                hasError = true;
+                errorMsg = 'Họ và tên không được chứa số hoặc ký tự đặc biệt.';
+            }
+
+            if (originalVal !== val) {
+                let start = profileName.selectionStart;
+                let end = profileName.selectionEnd;
+                let diff = originalVal.length - val.length;
+                profileName.value = val;
+                if (start !== null && end !== null) {
+                    profileName.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
                 }
-                const isValid = this.value.length === 0 || pattern.test(this.value);
-                this.classList.toggle('is-invalid', !isValid);
-                errorDiv.style.display = isValid ? 'none' : 'block';
-                checkFormValidity();
+            }
+
+            if (hasError) {
+                profileName.classList.add('is-invalid');
+                nameError.textContent = errorMsg;
+                return false;
+            } else {
+                profileName.classList.remove('is-invalid');
+                return true;
+            }
+        }
+
+        function doValidateEmail() {
+            if (!profileEmail) return true;
+            let originalVal = profileEmail.value;
+            let val = originalVal;
+            let hasError = false;
+            let errorMsg = '';
+
+            // Xóa tất cả khoảng trắng trong email
+            if (/\s/.test(val)) {
+                val = val.replace(/\s/g, '');
+                hasError = true;
+                errorMsg = 'Email không được chứa khoảng trắng.';
+            }
+
+            // Bắt lỗi nhập từ có dấu trong email
+            const nonAsciiRegex = /[^\x00-\x7F]/g;
+            if (nonAsciiRegex.test(val)) {
+                val = val.replace(nonAsciiRegex, '');
+                hasError = true;
+                errorMsg = 'Email không được chứa chữ có dấu.';
+            }
+
+            if (originalVal !== val) {
+                let start = profileEmail.selectionStart;
+                let end = profileEmail.selectionEnd;
+                let diff = originalVal.length - val.length;
+                profileEmail.value = val;
+                if (start !== null && end !== null) {
+                    profileEmail.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+                }
+            }
+
+            // Phân tích lỗi định dạng cụ thể
+            let isValidFormat = true;
+            let formatErrorMsg = '';
+            if (val.length > 0) {
+                if (!val.includes('@')) {
+                    isValidFormat = false;
+                    formatErrorMsg = 'Email đang thiếu ký tự @.';
+                } else {
+                    let parts = val.split('@');
+                    if (parts[0].length === 0) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email đang thiếu tên trước @.';
+                    } else if (parts.length > 2) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email không được chứa nhiều hơn 1 ký tự @.';
+                    } else if (parts[1].length === 0) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email đang thiếu tên miền (sau @).';
+                    } else if (!parts[1].includes('.')) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Tên miền email đang thiếu dấu chấm (.).';
+                    } else {
+                        let domainParts = parts[1].split('.');
+                        if (domainParts[domainParts.length - 1].length < 2) {
+                            isValidFormat = false;
+                            formatErrorMsg = 'Tên miền email chưa đầy đủ hoặc không hợp lệ.';
+                        }
+                    }
+                }
+            }
+
+            if (hasError || (val.length > 0 && !isValidFormat)) {
+                profileEmail.classList.add('is-invalid');
+                if (!hasError) errorMsg = formatErrorMsg;
+                emailError.textContent = errorMsg;
+                return false;
+            } else {
+                profileEmail.classList.remove('is-invalid');
+                return true;
+            }
+        }
+
+        let nameValidationTimeout;
+        if (profileName) {
+            profileName.addEventListener('input', function() {
+                clearTimeout(nameValidationTimeout);
+                nameValidationTimeout = setTimeout(doValidateName, 50);
+            });
+        }
+        
+        let emailValidationTimeout;
+        if (profileEmail) {
+            profileEmail.addEventListener('input', function() {
+                clearTimeout(emailValidationTimeout);
+                emailValidationTimeout = setTimeout(doValidateEmail, 50);
+            });
+        }
+
+        if (userForm) {
+            userForm.addEventListener('submit', function(e) {
+                const isNameValid = doValidateName();
+                const isEmailValid = doValidateEmail();
+                // Check if password match is valid if there is a password match requirement logic
+                if (typeof isMatchValid !== 'undefined' && !isMatchValid && document.getElementById('password').value.length > 0) {
+                    e.preventDefault();
+                    return;
+                }
+                if (!isNameValid || !isEmailValid) {
+                    e.preventDefault();
+                }
             });
         }
 
