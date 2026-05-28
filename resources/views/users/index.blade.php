@@ -15,7 +15,7 @@
     </div>
 
     <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
-        <form action="{{ route('users.index') }}" method="GET" class="row g-3">
+        <form action="{{ route('users.index') }}" method="GET" class="row g-3" id="search_form">
             <!-- <div class="col-md-10">
                 <input type="text" name="search" class="form-control border-light" placeholder="Tìm theo mã nhân sự, họ tên, email, chức vụ, bộ phận..." value="{{ request('search') }}">
             </div> -->
@@ -24,7 +24,10 @@
             </div>
             <div class="col-md-2"><input type="text" name="employee_code" class="form-control border-light" placeholder="Mã" value="{{ request('employee_code') }}"></div>
             <div class="col-md-2"><input type="text" name="name" class="form-control border-light" placeholder="Họ tên" value="{{ request('name') }}"></div>
-            <div class="col-md-2"><input type="text" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}"></div>
+            <div class="col-md-2">
+                <input type="text" id="search_email" name="email" class="form-control border-light" placeholder="Email" value="{{ request('email') }}">
+                <div id="search_email_error" class="invalid-feedback position-absolute"></div>
+            </div>
             <div class="col-md-2"><input type="text" name="position" class="form-control border-light" placeholder="Chức vụ" value="{{ request('position') }}"></div>
             <div class="col-md-2"><input type="text" name="department" class="form-control border-light" placeholder="Bộ phận" value="{{ request('department') }}"></div>
             <div class="col-md-2">
@@ -110,3 +113,126 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchEmail = document.getElementById('search_email');
+        const emailError = document.getElementById('search_email_error');
+        const searchForm = document.getElementById('search_form');
+
+        function doValidateEmail() {
+            if (!searchEmail) return true;
+            let originalVal = searchEmail.value;
+            let val = originalVal;
+            let hasError = false;
+            let errorMsg = '';
+
+            // Xóa tất cả khoảng trắng trong email
+            if (/\s/.test(val)) {
+                val = val.replace(/\s/g, '');
+                hasError = true;
+                errorMsg = 'Email không được chứa khoảng trắng.';
+            }
+
+            // Chỉ cho phép chữ, số, @ và .
+            const invalidCharsRegex = /[^a-zA-Z0-9@.]/g;
+            if (invalidCharsRegex.test(val)) {
+                val = val.replace(invalidCharsRegex, '');
+                hasError = true;
+                errorMsg = 'Email chỉ được chứa chữ, số, @ và dấu chấm.';
+            }
+
+            // Chỉ cho phép 1 ký tự @
+            if ((val.match(/@/g) || []).length > 1) {
+                const firstAt = val.indexOf('@');
+                val = val.substring(0, firstAt + 1) + val.substring(firstAt + 1).replace(/@/g, '');
+                hasError = true;
+                errorMsg = 'Email chỉ được chứa tối đa 1 ký tự @.';
+            }
+
+            // Chỉ cho phép 1 ký tự .
+            if ((val.match(/\./g) || []).length > 1) {
+                const firstDot = val.indexOf('.');
+                val = val.substring(0, firstDot + 1) + val.substring(firstDot + 1).replace(/\./g, '');
+                hasError = true;
+                errorMsg = 'Email chỉ được chứa tối đa 1 dấu chấm.';
+            }
+
+            if (originalVal !== val) {
+                let start = searchEmail.selectionStart;
+                let end = searchEmail.selectionEnd;
+                let diff = originalVal.length - val.length;
+                searchEmail.value = val;
+                if (start !== null && end !== null) {
+                    searchEmail.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+                }
+            }
+
+            // Phân tích lỗi định dạng cụ thể (optional cho ô search, nhưng để đầy đủ theo yêu cầu)
+            let isValidFormat = true;
+            let formatErrorMsg = '';
+            if (val.length > 0) {
+                if (!val.includes('@')) {
+                    isValidFormat = false;
+                    formatErrorMsg = 'Email đang thiếu ký tự @.';
+                } else {
+                    let parts = val.split('@');
+                    if (parts[0].length === 0) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email đang thiếu tên trước @.';
+                    } else if (parts.length > 2) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email không được chứa nhiều hơn 1 ký tự @.';
+                    } else if (parts[1].length === 0) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Email đang thiếu tên miền (sau @).';
+                    } else if (!parts[1].includes('.')) {
+                        isValidFormat = false;
+                        formatErrorMsg = 'Tên miền email đang thiếu dấu chấm (.).';
+                    } else {
+                        let domainParts = parts[1].split('.');
+                        if (domainParts[domainParts.length - 1].length < 2) {
+                            isValidFormat = false;
+                            formatErrorMsg = 'Tên miền email chưa đầy đủ hoặc không hợp lệ.';
+                        }
+                    }
+                }
+            }
+
+            if (hasError || (val.length > 0 && !isValidFormat)) {
+                searchEmail.classList.add('is-invalid');
+                if (!hasError) errorMsg = formatErrorMsg;
+                emailError.textContent = errorMsg;
+                return false;
+            } else {
+                searchEmail.classList.remove('is-invalid');
+                return true;
+            }
+        }
+
+        let emailValidationTimeout;
+        if (searchEmail) {
+            searchEmail.addEventListener('input', function() {
+                clearTimeout(emailValidationTimeout);
+                emailValidationTimeout = setTimeout(doValidateEmail, 50);
+            });
+            // Trigger on load for pre-filled data
+            if (searchEmail.value) {
+                searchEmail.dispatchEvent(new Event('input'));
+            }
+        }
+
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                if (searchEmail.value.length > 0) {
+                    const isEmailValid = doValidateEmail();
+                    if (!isEmailValid) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        }
+    });
+</script>
+@endpush

@@ -777,12 +777,28 @@
                 errorMsg = 'Email không được chứa khoảng trắng.';
             }
 
-            // Bắt lỗi nhập từ có dấu trong email
-            const nonAsciiRegex = /[^\x00-\x7F]/g;
-            if (nonAsciiRegex.test(val)) {
-                val = val.replace(nonAsciiRegex, '');
+            // Chỉ cho phép chữ, số, @ và .
+            const invalidCharsRegex = /[^a-zA-Z0-9@.]/g;
+            if (invalidCharsRegex.test(val)) {
+                val = val.replace(invalidCharsRegex, '');
                 hasError = true;
-                errorMsg = 'Email không được chứa chữ có dấu.';
+                errorMsg = 'Email chỉ được chứa chữ, số, @ và dấu chấm.';
+            }
+
+            // Chỉ cho phép 1 ký tự @
+            if ((val.match(/@/g) || []).length > 1) {
+                const firstAt = val.indexOf('@');
+                val = val.substring(0, firstAt + 1) + val.substring(firstAt + 1).replace(/@/g, '');
+                hasError = true;
+                errorMsg = 'Email chỉ được chứa tối đa 1 ký tự @.';
+            }
+
+            // Chỉ cho phép 1 ký tự .
+            if ((val.match(/\./g) || []).length > 1) {
+                const firstDot = val.indexOf('.');
+                val = val.substring(0, firstDot + 1) + val.substring(firstDot + 1).replace(/\./g, '');
+                hasError = true;
+                errorMsg = 'Email chỉ được chứa tối đa 1 dấu chấm.';
             }
 
             if (originalVal !== val) {
